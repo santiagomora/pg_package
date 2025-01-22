@@ -1,0 +1,14 @@
+.local
+.local/*
+__pycache__
+bin
+lib
+lib64
+.cache
+pg_package.egg-info
+dist
+commit.msg
+.commit.msg.swp
+pyvenv.cfg
+*.kate-swp
+venv

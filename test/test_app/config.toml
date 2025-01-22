@@ -1,0 +1,5 @@
+[migration]
+datafix_relative_path = "./datafix"
+migration_submodule = ".migration"
+database_dsn = "host=172.18.0.1 dbname=mutzhub port=5432 user=mutzhub password=WtbNMMpX46iynzjVobrh8Qu7omvFIL9JEvbkLYYCpCJNIwDWnBwcVquhk6vXe6En"
+schema = "test"

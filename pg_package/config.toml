@@ -1,0 +1,6 @@
+[migration]
+migration_submodule = ".database.migration"
+database_dsn = "host=172.18.0.1 dbname=mutzhub port=5432 user=mutzhub password=WtbNMMpX46iynzjVobrh8Qu7omvFIL9JEvbkLYYCpCJNIwDWnBwcVquhk6vXe6En"
+var_directory = "./database/var"
+datafix_directory = "./database/datafix"
+tracked_branch = "trunk"
