@@ -16,8 +16,8 @@ class with_timestamps(pg.table):
     updated_at: pg.timestamptz
 
 
-@pg.foreign_key(name='authorable_author_fk', other_class=author,
-                columns=('author_id', ), other_class_columns=('id', ))
+@pg.foreign_key(name='authorable_author_fk', references=author,
+                columns=('author_id', ), references_columns=('id', ))
 class authored(pg.table):
     author_id: pg.int8
     content: pg.text
@@ -45,8 +45,8 @@ class comment_id_sequence(pg.int8_sequence):
 
 
 @pg.primary_key(name='comment_pk', columns=('id', ))
-@pg.foreign_key(name='comment_post_fk', other_class=post, columns=('post_id', ),
-                other_class_columns=('id', ))
+@pg.foreign_key(name='comment_post_fk', references=post, columns=('post_id', ),
+                references_columns=('id', ))
 class comment(authored, with_timestamps):
     id: pg.int8
     post_id: pg.Annotated[pg.int8, pg.meta.default_nextval(seq=comment_id_sequence)]

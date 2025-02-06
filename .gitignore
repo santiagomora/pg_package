@@ -5,7 +5,7 @@ bin
 lib
 lib64
 .cache
-pg_package.egg-info
+mgr_manager.egg-info
 dist
 commit.msg
 .commit.msg.swp
