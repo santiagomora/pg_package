@@ -1,4 +1,4 @@
-import pg_definition as pg
+import core_pg_bindings as pg
 
 
 class author_id_sequence(pg.int8_sequence):

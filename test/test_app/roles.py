@@ -1,5 +1,5 @@
 from test_app import test
-import pg_definition as pg
+import core_pg_bindings as pg
 
 
 @pg.grant.schema.usage(test)

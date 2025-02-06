@@ -1,0 +1,18 @@
+#include <pybind11/pybind11.h>
+
+#include "core_migrations/types.hpp"
+#include "core_pg_bindings/macros/register.hpp"
+
+
+namespace py = pybind11;
+
+
+PYBIND11_MODULE (wrapper, m) {
+    PG_PY_ENUM_REGISTER(CORE_MIGRATIONS_EXECUTION_ACTION, m);
+    PG_PY_TABLE_REGISTER(CORE_MIGRATIONS_PACKAGE, m);
+    PG_PY_TABLE_REGISTER(CORE_MIGRATIONS_EXECUTION, m);
+    PG_PY_TABLE_REGISTER(CORE_MIGRATIONS_EXECUTION_COMMIT_HASH, m);
+    PG_PY_TABLE_REGISTER(CORE_MIGRATIONS_MIGRATION, m);
+    PG_PY_TABLE_REGISTER(CORE_MIGRATIONS_EXECUTION_MIGRATION, m);
+}
+

@@ -5,21 +5,19 @@ from core_pg_bindings.builder.common import\
 from typing import\
     Generator,\
     Optional
-import sys
-sys.path.append('../../')
-import test_app
+import core_migrations.backend as mgr
 
 
 # NOTE: These functions are designed to yield a builder that holds all the
 # operations that the migration is set to perform to update the postgres objects.
-GENERATED_AT: str = '2024-12-21 04:14:30+00:00'
+GENERATED_AT: str = '2024-12-23 17:50:07+00:00'
 DEPENDS_ON: list[str] = []
 DATAFIX_NAME: Optional[str] = None
 
 
-def up() -> Generator[GeneratesSQLSentence, None, None]:
-    yield from sb.builder(test_app.test).create()
+def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
+    yield from sb.builder(mgr.schema).create()
 
 
-def down() -> Generator[GeneratesSQLSentence, None, None]:
-    yield from sb.builder(test_app.test).drop()
+def downgrade() -> Generator[GeneratesSQLSentence, None, None]:
+    yield from sb.builder(mgr.schema).drop()
