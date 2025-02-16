@@ -1,7 +1,7 @@
 import importlib
 import os
 import psycopg
-import core_migrations.backend as mgr
+import core_migrations
 import heapq
 from .config import\
     ActionConfiguration
@@ -13,10 +13,13 @@ from .check_install import\
 import core_pg_bindings.builder.schema as sb
 from .prompt import\
     prompt_error
-from core_pg_bindings.builder.common import\
+from core_pg_bindings import\
     load_functions_from_file
 import math
 import functools
+
+
+mgr = core_migrations.database.core_migrations
 
 
 class ConsistencyException(Exception):
@@ -28,13 +31,13 @@ class MigrationWrapper:
         self, module, config: ActionConfiguration
     ) -> None:
         self.module = module
-        self.last_executed_action: Optional[mgr.schema.execution_action] = None
+        self.last_executed_action: Optional[mgr.execution_action] = None
         self.config = config
         if module.DATAFIX_NAME is not None:
-            self.datafix_functions = load_functions_from_file(
-                f'{config.DATAFIX_PATH}/{module.DATAFIX_NAME}.sql',
-                config.DATAFIX_TMP_SCHEMA, None
-            )
+            with open(f'{config.DATAFIX_PATH}/{module.DATAFIX_NAME}.sql') as fns:
+                load_functions_from_file(
+                    self.datafix_functions, fns, config.DATAFIX_TMP_SCHEMA, None
+                )
 
     def __repr__(self):
         return f'Migration(NAME={self.NAME}, DEPENDS_ON={self.DEPENDS_ON})'
@@ -58,7 +61,7 @@ class MigrationWrapper:
         '''
         errors: list[str] = []
         creating: list[str] = []
-        opposite_script: mgr.schema.execution_action.enum = self.config.opposite_action()
+        opposite_script: mgr.execution_action.enum = self.config.opposite_action()
         for c_sentence in self.upgrade():
             if isinstance(c_sentence, sb.Create):
                 creating.append(c_sentence.component.name)
@@ -67,11 +70,11 @@ class MigrationWrapper:
                     and isinstance(c_sentence.change, sb.Add):
                 # we are defining some type, we only need the drop constraint, we ignore following alters that add things to definition
                 continue
-            if isinstance(c_sentence, sb.Function.Execute):
-                # try to execute a function
-                if c_sentence.component.name not in self.datafix_functions:
-                    errors.append(f'"{c_sentence}" can only execute datafix functions in {self.execution_action} script. Please associate a datafix file.')
-                    continue
+            # if isinstance(c_sentence, sb.Function.Execute):
+            #     # try to execute a function
+            #     if c_sentence.component.name not in self.datafix_functions:
+            #         errors.append(f'"{c_sentence}" can only execute datafix functions in {self.execution_action} script. Please associate a datafix file.')
+            #         continue
             has_opposite: bool = False
             for rb_sentence in self.downgrade():
                 has_opposite = has_opposite or c_sentence.is_opposite(rb_sentence)
@@ -115,8 +118,8 @@ class ExecutionHeap(list[MigrationWrapper]):
             with psycopg.connect(self.config.DB_DSN) as conn:
                 with conn.cursor() as cursor:
                     if cursor is not None:
-                        module.last_executed_action = mgr.schema.get_last_action(
-                            cursor, p_migration=mgr.schema.get_migration_by_name(cursor, p_name=module.NAME)
+                        module.last_executed_action = mgr.get_last_action(
+                            cursor, p_migration=mgr.get_migration_by_name(cursor, p_name=module.NAME)
                         )
         return module
 

@@ -12,8 +12,7 @@ from ._common.execution import\
 from ._common.prompt import\
     prompt_yes_no,\
     prompt_notice,\
-    prompt_error,\
-    prompt_sql_command
+    prompt_error
 import psycopg
 
 

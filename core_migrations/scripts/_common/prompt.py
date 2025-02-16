@@ -1,5 +1,10 @@
 import sys
 from typing import Any
+import traceback
+from datetime import\
+    datetime,\
+    timezone
+import core_migrations.backend.cpp.wrapper as bw
 
 
 def prompt_yes_no(question) -> bool:
@@ -18,12 +23,13 @@ def prompt_yes_no(question) -> bool:
 
 
 def prompt_notice(notice: str) -> None:
-    sys.stdout.write(f"[NOTICE] {notice}\n")
-
-
-def prompt_sql_command(command: str, parameters: Any) -> None:
-    sys.stdout.write(f"[SQL-COMMAND] {command} [PARAMS]={parameters}\n")
+    bw.prompt_notice(notice)
 
 
 def prompt_error(err: str) -> None:
-    sys.stdout.write(f"[ERROR] {err}\n")
+    bw.prompt_error(err, str(traceback.format_exc()))
+
+
+def log_notice(diag):
+    now = datetime.now(timezone.utc)
+    sys.stdout.write(f"[SERVER - {now.isoformat()}] {diag.severity} - {diag.message_primary}\n")

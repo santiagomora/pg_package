@@ -1,7 +1,9 @@
 [migration]
-migration_submodule = ".database.migration"
+migration_submodule = ".migration"
 database_dsn = "host=172.18.0.1 dbname=mutzhub port=5432 user=mutzhub password=WtbNMMpX46iynzjVobrh8Qu7omvFIL9JEvbkLYYCpCJNIwDWnBwcVquhk6vXe6En"
-var_directory = "./database/var"
-datafix_directory = "./database/datafix"
+var_directory = "./var"
+datafix_directory = "./datafix"
 tracked_branch = "trunk"
-search_path = ["mgr_migration"]
+search_path = ["core_migrations"]
+procedure_schema = "core_migration_procedure"
+schema = "core_migrations"

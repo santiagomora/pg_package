@@ -2,17 +2,18 @@ import sys
 import importlib
 import os
 import toml
-import core_migrations
-# from core_migrations.backend import\
-#     register_types
 import functools
 import time
-import core_migrations.backend as mgr
 from abc import\
     abstractmethod
 import argparse
 from .prompt import\
     prompt_notice
+import core_migrations
+from datetime import datetime, timezone
+
+
+mgr = core_migrations.database.core_migrations
 
 
 class _ExecutionConfiguration:
@@ -31,6 +32,11 @@ class _ExecutionConfiguration:
     @functools.cache
     def PACKAGE_NAME(self) -> str:
         return self.package.__name__
+
+    @property
+    @functools.cache
+    def PROCEDURE_SCHEMA(self) -> str:
+        return self.config["migration"]["procedure_schema"]
 
     @property
     @functools.cache
@@ -90,8 +96,13 @@ class _ExecutionConfiguration:
 
     @property
     @functools.cache
+    def DRY_RUN(self):
+        return self.args.dry_run
+
+    @property
+    @functools.cache
     def SEARCH_PATH(self) -> str:
-        return self.config["search_path"]
+        return self.config["migration"]["search_path"]
 
     def fill_template(self, name: str, **kwargs) -> str:
         template: str = ''
@@ -105,10 +116,9 @@ class _ExecutionConfiguration:
         with open(destination_file, 'w') as f:
             f.write(script)
 
-
     @property
     @abstractmethod
-    def SCRIPT_OUTPUT_NAME(self) -> str:
+    def SCRIPT_NAME(self) -> None:
         pass
 
 
@@ -120,7 +130,7 @@ class GenerateConfiguration(_ExecutionConfiguration):
 
 class ActionConfiguration(_ExecutionConfiguration):
     @abstractmethod
-    def opposite_action(self) -> mgr.schema.execution_action.enum:
+    def opposite_action(self) -> mgr.execution_action.enum:
         pass
 
     @staticmethod
@@ -134,9 +144,9 @@ class DowngradeConfiguration(ActionConfiguration):
         self, args: argparse.Namespace
     ) -> None:
         ActionConfiguration.__init__(self, args.package, args)
-        self.execution_action = mgr.schema.execution_action.enum.downgrade
+        self.execution_action = mgr.execution_action.enum.downgrade
 
-    def opposite_action(self) -> mgr.schema.execution_action.enum:
+    def opposite_action(self) -> mgr.execution_action.enum:
         return core_migrations.execution_action.downgrade
 
     @staticmethod
@@ -144,7 +154,7 @@ class DowngradeConfiguration(ActionConfiguration):
         return mgr2.NAME in mgr1._DEPENDS_ON
 
     @property
-    def SCRIPT_OUTPUT_NAME(self) -> str:
+    def SCRIPT_NAME(self) -> str:
         # TODO have to configure this to work with git commits
         return f'{self.PACKAGE_NAME}_{self.TRACKED_BRANCH}_{self.COMMIT_HASH}_downgrade'
 
@@ -156,9 +166,9 @@ class UpgradeConfiguration(ActionConfiguration):
         ActionConfiguration.__init__(self, args.package, args)
         self.migration = args.migration
         self.dry_run = args.dry_run
-        self.execution_action = mgr.schema.execution_action.enum.upgrade
+        self.execution_action = mgr.execution_action.enum.upgrade
 
-    def opposite_action(self) -> mgr.schema.execution_action.enum:
+    def opposite_action(self) -> mgr.execution_action.enum:
         return core_migrations.execution_action.downgrade
 
     @staticmethod
@@ -166,7 +176,7 @@ class UpgradeConfiguration(ActionConfiguration):
         return mgr2.NAME not in mgr1._DEPENDS_ON
 
     @property
-    def SCRIPT_OUTPUT_NAME(self) -> str:
+    def SCRIPT_NAME(self) -> str:
         # TODO have to configure this to work with git commits
         return f'{self.PACKAGE_NAME}_{self.TRACKED_BRANCH}_{self.COMMIT_HASH}_upgrade'
 
@@ -176,16 +186,16 @@ class SetupConfiguration(ActionConfiguration):
         self, args: argparse.Namespace
     ) -> None:
         ActionConfiguration.__init__(self, "core_migrations", args)
-        self.execution_action = mgr.schema.execution_action.enum.setup
+        self.execution_action = mgr.execution_action.enum.setup
 
-    def opposite_action(self) -> mgr.schema.execution_action.enum:
-        return mgr.schema.execution_action.enum.downgrade
+    def opposite_action(self) -> mgr.execution_action.enum:
+        return mgr.execution_action.enum.downgrade
 
     @staticmethod
     def compare_migrations(mgr1: 'MigrationWrapper', mgr2: 'MigrationWrapper') -> bool:
         return mgr2.NAME not in mgr1._DEPENDS_ON
 
     @property
-    def SCRIPT_OUTPUT_NAME(self) -> str:
-        # TODO have to configure this to work with git commits
-        return f'{self.PACKAGE_NAME}_{self.TRACKED_BRANCH}_{self.COMMIT_HASH}_setup'
+    def SCRIPT_NAME(self) -> str:
+        now: str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        return f'setup_{self.COMMIT_HASH}_{now}'

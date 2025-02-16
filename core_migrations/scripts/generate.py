@@ -9,7 +9,8 @@ from typing import\
 from ._common.config import\
     GenerateConfiguration
 from ._common.prompt import\
-    prompt_notice
+    prompt_notice,\
+    prompt_error
 
 
 CONFIG: Optional[GenerateConfiguration] = None
