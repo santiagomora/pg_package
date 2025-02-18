@@ -7,14 +7,18 @@ set(pybind11_DIR /home/smora/sgs/dev/python/core/venv/lib/python3.12/site-packag
 find_package(pybind11 REQUIRED)
 pybind11_add_module(${PROJECT_NAME}
     wrapper.cpp
-    src/prompt.cpp)
+    src/interface.cpp
+    src/util.cpp
+    src/backend.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ./include)
+target_include_directories(${PROJECT_NAME} PRIVATE ../../database/cpp/lib/include)
 target_include_directories(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_pg_bindings/core_pg_bindings/cpp/lib/include)
 target_include_directories(${PROJECT_NAME} PRIVATE /home/smora/dev/usr/include/)
 target_include_directories(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_types/core_types/cpp/lib/include)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PYBIND11_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_types/core_types/cpp/lib/build/libcore_types.so)
+target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_pg_bindings/core_pg_bindings/cpp/lib/build/libcore_pg_bindings.so)
+target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_migrations/core_migrations/database/cpp/lib/build/libcore_migrations_db.so)
 target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/dev/usr/lib/libpqxx.so)
 target_link_libraries(${PROJECT_NAME} PRIVATE pq)
-target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_pg_bindings/core_pg_bindings/cpp/lib/build/libcore_pg_bindings.so)
 

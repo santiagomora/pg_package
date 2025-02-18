@@ -1,5 +1,6 @@
 import core_pg_bindings.builder.schema as sb
 import core_pg_bindings.builder.role as rb
+import core_types as ct
 from core_pg_bindings.builder.common import\
     GeneratesSQLSentence
 from typing import\
@@ -20,14 +21,12 @@ def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
         .sequence('execution_id_seq').create()
 
     yield from sb.builder(mgr)\
-        .enum('execution_action').create()\
-        .enum('execution_action').value('upgrade').add()\
-        .enum('execution_action').value('downgrade').add()\
-        .enum('execution_action').value('install').add()
+        .enum('execution_action').create()
 
     yield from sb.builder(mgr)\
         .table('execution').create()\
         .table('execution').column('id').add()\
+        .table('execution').column('id').default().set_from(ct.Undefined)\
         .table('execution').column('package_id').add()\
         .table('execution').column('created_at').add()\
         .table('execution').column('commit_hash').add()\
@@ -44,6 +43,7 @@ def downgrade() -> Generator[GeneratesSQLSentence, None, None]:
         .table('execution').column('commit_hash').drop()\
         .table('execution').column('created_at').drop()\
         .table('execution').column('package_id').drop()\
+        .table('execution').column('id').default().drop()\
         .table('execution').column('id').drop()\
         .table('execution').drop()
 

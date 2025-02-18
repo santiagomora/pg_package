@@ -1,21 +1,9 @@
-#ifndef CORE_MIGRATIONS_DATABASE_TYPING_TYPES
-#define CORE_MIGRATIONS_DATABASE_TYPING_TYPES
-#include "core_pg_bindings/macros/declaration.hpp"
-#include "core_pg_bindings/typing/definitions.hpp"
-#include "core_pg_bindings/typing/types.hpp"
-#include "core_migrations/database/typing/definitions.hpp"
+#ifndef CORE_MIGRATIONS_DATABASE_DECLARATIONS
+#define CORE_MIGRATIONS_DATABASE_DECLARATIONS
+#include "core_migrations/database/_definitions.hpp"
 
 
-// DEBUG clear && g++ -P -E -I/usr/include/boost -I../../../../../core_types/cpp -I./ -I../../../../../../core_pg_bindings/venv/lib/python3.12/site-packages/pybind11/include wrapper.cpp
-
-
-namespace core_migrations
-{
-    
-};
-
-
-namespace core_migrations::database
+namespace core_migrations::database::declarations
 {
 // NOTE TYPES
 PG_CPP_ENUM_DECLARATION(CORE_MIGRATIONS_DB_EXECUTION_ACTION);
@@ -32,5 +20,15 @@ PG_CPP_INVOKABLE_DECLARATION(CORE_MIGRATIONS_DB_CREATE_MIGRATION);
 PG_CPP_INVOKABLE_DECLARATION(CORE_MIGRATIONS_DB_CREATE_PACKAGE);
 };
 
+
+namespace pqxx
+{
+PG_DECLARE_ENUM_CONVERSION(CORE_MIGRATIONS_DB_EXECUTION_ACTION);
+PG_DECLARE_TABLE_CONVERSION(CORE_MIGRATIONS_DB_PACKAGE);
+PG_DECLARE_TABLE_CONVERSION(CORE_MIGRATIONS_DB_EXECUTION);
+PG_DECLARE_TABLE_CONVERSION(CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH);
+PG_DECLARE_TABLE_CONVERSION(CORE_MIGRATIONS_DB_MIGRATION);
+PG_DECLARE_TABLE_CONVERSION(CORE_MIGRATIONS_DB_EXECUTION_MIGRATION);
+}
 
 #endif

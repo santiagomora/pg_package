@@ -1,9 +1,7 @@
-#include "core_pg_bindings/macros/register.hpp"
-#include "core_migrations/database/typing/namespace.hpp"
+#include "core_migrations/database/declarations.hpp"
 
 
-namespace cm = core_migrations::database;
-namespace py = pybind11;
+namespace cm_db_dec = core_migrations::database::declarations;
 
 
 PG_ENUM_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_EXECUTION_ACTION);
@@ -15,7 +13,7 @@ PG_TABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH);
 
 
 PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_CREATE_EXECUTION);
-std::vector<std::string_view> cm::create_execution::overloads = {
+std::vector<std::string_view> cm_db_dec::create_execution::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION create_execution (
     p_package package,
@@ -36,7 +34,7 @@ $$ LANGUAGE plpgsql VOLATILE STRICT;
 
 
 PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_REGISTER_EXECUTION_COMMIT_HASH);
-std::vector<std::string_view> cm::register_execution_commit_hash::overloads = {
+std::vector<std::string_view> cm_db_dec::register_execution_commit_hash::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION register_execution_commit_hash (
     p_execution execution,
@@ -52,7 +50,7 @@ $$ LANGUAGE plpgsql VOLATILE STRICT;
 
 
 PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_REGISTER_EXECUTION_MIGRATION);
-std::vector<std::string_view> cm::register_execution_migration::overloads = {
+std::vector<std::string_view> cm_db_dec::register_execution_migration::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION register_execution_migration (
     p_execution execution,
@@ -68,7 +66,7 @@ $$ LANGUAGE plpgsql VOLATILE STRICT;
 
 
 PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_CREATE_MIGRATION);
-std::vector<std::string_view> cm::create_migration::overloads = {
+std::vector<std::string_view> cm_db_dec::create_migration::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION create_migration (
     p_execution execution,
@@ -76,32 +74,31 @@ CREATE OR REPLACE FUNCTION create_migration (
     p_datafix_name text = NULL
 ) RETURNS migration AS $$
 DECLARE 
-    v_migration execution;
+    v_migration migration;
 BEGIN
     INSERT INTO migration(execution_id, name, datafix_name, created_at)
     VALUES (p_execution.id, p_name, p_datafix_name, now())
     RETURNING * INTO v_migration;
     RETURN v_migration;
 END;
-$$ LANGUAGE plpgsql VOLATILE STRICT;
+$$ LANGUAGE plpgsql VOLATILE;
 )###"
 };
 
 
 PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_CREATE_PACKAGE);
-std::vector<std::string_view> cm::create_package::overloads = {
+std::vector<std::string_view> cm_db_dec::create_package::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION create_package (
     p_name text,
-    p_version text,
     p_branch_name text,
     p_current_commit_hash text
 ) RETURNS package AS $$
 DECLARE 
     v_package package;
 BEGIN
-    INSERT INTO package(name, version, branch_name, current_commit_hash, last_updated_at)
-    VALUES (p_name, p_version, p_branch_name, p_current_commit_hash, now())
+    INSERT INTO package(name, branch_name, current_commit_hash, last_updated_at)
+    VALUES (p_name, p_branch_name, p_current_commit_hash, now())
     RETURNING * INTO v_package;
     RETURN v_package;
 END;

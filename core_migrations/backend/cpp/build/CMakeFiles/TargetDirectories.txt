@@ -1,3 +1,0 @@
-/home/smora/sgs/dev/python/core/core_migrations/core_migrations/backend/cpp/build/CMakeFiles/wrapper.dir
-/home/smora/sgs/dev/python/core/core_migrations/core_migrations/backend/cpp/build/CMakeFiles/edit_cache.dir
-/home/smora/sgs/dev/python/core/core_migrations/core_migrations/backend/cpp/build/CMakeFiles/rebuild_cache.dir

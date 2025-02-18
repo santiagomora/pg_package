@@ -17,5 +17,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/dev/usr/lib/libpqxx.so
 target_link_libraries(${PROJECT_NAME} PRIVATE pq)
 target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_types/core_types/cpp/lib/build/libcore_types.so)
 target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_pg_bindings/core_pg_bindings/cpp/lib/build/libcore_pg_bindings.so)
-target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_migrations/core_migrations/database/cpp/lib/build/libcore_migrations.so)
+target_link_libraries(${PROJECT_NAME} PRIVATE /home/smora/sgs/dev/python/core/core_migrations/core_migrations/database/cpp/lib/build/libcore_migrations_db.so)
 

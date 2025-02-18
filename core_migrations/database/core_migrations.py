@@ -50,10 +50,10 @@ class execution_commit_hash(pw.execution_commit_hash, metaclass=pg.table):
 @pg.table.primary_key(
     name='migration_pk', columns=('id',))
 @pg.table.unique_constraint(
-    name='migration_unique_name_constraint', columns=('package_id', 'name',))
+    name='migration_unique_name_constraint', columns=('execution_id', 'name',))
 @pg.table.foreign_key(
-    name='migration_package_id_fk', columns=('package_id',),
-    references=package, referenced_columns=('id',))
+    name='migration_package_id_fk', columns=('execution_id',),
+    references=execution, referenced_columns=('id',))
 # @pg.foreign_key( implement self class references
 #     name='migration_parent_id_fk', columns=('parent_id',),
 #     references=migration, referenced_columns=('id',))

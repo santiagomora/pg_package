@@ -97,7 +97,10 @@ class ExecutionHeap(list[MigrationWrapper]):
         ctr = 0
         while len(copy) > 0:
             migration: MigrationWrapper = heapq.heappop(copy)
-            res += f'{"  "*int(math.log(level, 2))}{repr(migration)}\n'
+            spacing = "  "*int(math.log(level, 2))
+            extrapadding = "        "
+            dependencies = f'{spacing}{extrapadding}'+f"\n{spacing}{extrapadding}".join(migration.DEPENDS_ON)
+            res += f'{spacing}*** NAME: {migration.NAME}\n{spacing}    DEPENDS_ON: [\n{dependencies}]\n\n'
             if ctr % level == 0:
                 level *= 2
                 ctr = 0

@@ -1,6 +1,5 @@
 #include <pybind11/pybind11.h>
-#include "core_pg_bindings/macros/register.hpp"
-#include "core_migrations/database/typing/namespace.hpp"
+#include "core_migrations/database/declarations.hpp"
 
 
 namespace py = pybind11;

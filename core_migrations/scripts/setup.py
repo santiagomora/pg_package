@@ -5,6 +5,8 @@ import sys
 from datetime import datetime, timezone
 from psycopg import sql
 from core_pg_bindings.builder.common import identifier
+from core_migrations.backend import SetupParameters
+import core_migrations.backend.cpp.wrapper as cmw
 
 
 # executes pip install for a package
@@ -15,6 +17,7 @@ def generate_setup_script(config: cm.SetupConfiguration) -> None:
     execution_heap: cm.ExecutionHeap = cm.get_migration_setup_heap(config)
     cm.prompt_notice(f'EXECUTION PLAN:\n\n{execution_heap}')
     setup_script_transactions: list[str] = []
+    migrations = []
     with psycopg.connect(config.DB_DSN) as connection:
         with psycopg.ClientCursor(connection) as cursor:
             cm.prompt_notice('Generating migration script.')
@@ -22,6 +25,7 @@ def generate_setup_script(config: cm.SetupConfiguration) -> None:
             while len(execution_heap) > 0:
                 migration: cm.MigrationWrapper = execution_heap.pop()
                 cm.prompt_notice(f'Generating migration: {migration.NAME}')
+                migrations.append(migration.NAME)
                 transaction_queries = []
                 try:
                     for sentence in migration.upgrade():
@@ -37,33 +41,30 @@ def generate_setup_script(config: cm.SetupConfiguration) -> None:
                 except psycopg.Error as e:
                     cm.prompt_error(f"Migration {migration.NAME} error: {e}")
                     exit(1)
-    now: str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    setup_proc_name: str = f'setup_{now}_{config.COMMIT_HASH}'
-    cm_schema = config.MIGRATION_SCHEMA
-    cm_proc_schema = config.PROCEDURE_SCHEMA
-    cm.prompt_notice(f'Generated migration script, applying to the database')
-    script: str = config.fill_template(
-        'setup', setup_script_transactions="\n\n".join(setup_script_transactions),
-        procedure_name="{}", procedure_schema="{}"
-    )
-    with psycopg.connect(config.DB_DSN) as connection:
-        if config.DRY_RUN:
-            cm.prompt_notice(sql.SQL(script).format(identifier(setup_proc_name), sql.Literal(cm_schema)).as_string(connection))
-            exit(0)
-        connection.add_notice_handler(cm.log_notice)
-        try:
-            with connection.cursor() as cursor:
-                with connection.transaction():
-                    cm.prompt_notice(f'Creating "{cm_proc_schema}" schema')
-                    cursor.execute(sql.SQL('CREATE SCHEMA IF NOT EXISTS {};').format(identifier(cm_proc_schema)))
-                    cm.prompt_notice(f'Creating "{setup_proc_name}" procedure in "{cm_proc_schema}" schema')
-                    cursor.execute(sql.SQL("SET search_path to {};").format(identifier(cm_proc_schema)))
-                    cursor.execute(sql.SQL(script).format(identifier(setup_proc_name), sql.Literal(cm_schema)))
-                    cm.prompt_notice(f'Calling "{setup_proc_name}" procedure')
-                    cursor.execute(sql.SQL('CALL {}();').format(identifier(setup_proc_name)))
-        except Exception as e:
-            cm.prompt_notice(f'Failed to apply migration script "{setup_proc_name}"')
-            cm.prompt_error(str(e))
+        script: str = config.fill_template(
+            'setup', setup_script_transactions="\n\n".join(setup_script_transactions),
+            procedure_name="{}", procedure_schema="{}"
+        )
+        script = sql.SQL(script).format(identifier(config.SCRIPT_NAME), sql.Literal(config.MIGRATION_SCHEMA))\
+            .as_string(connection)
+    commits = ['test', 'commit 1', 'commit 2']
+    if config.DRY_RUN:
+        cm.prompt_notice(f'Migration script dry run:\
+                             \nCONNECTION:\n\t{config.DB_DSN}\
+                             \nSCRIPT NAME:\n\t{config.SCRIPT_NAME}\
+                             \nCOMMITS:\n\t{"\n\t".join(commits)}\
+                             \nMIGRATIONS:\n\t{"\n\t".join(migrations)}\
+                             \nSCRIPT:\n{script}')
+    else:
+        cmw.setup_core_migrations_in_database(SetupParameters(
+            script_name=config.SCRIPT_NAME,
+            commit_hashes_sequence=commits,
+            migration_names=migrations,
+            proc_schema=config.PROCEDURE_SCHEMA,
+            tracked_branch=config.TRACKED_BRANCH,
+            package_name='core_migrations',
+            setup_script=script
+        ), config.DB_DSN)
 
 
 if __name__ == '__main__':

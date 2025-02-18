@@ -6,6 +6,7 @@ from typing import\
     Generator,\
     Optional
 from core_migrations.database import core_migrations as mgr
+import core_types as ct
 
 
 # NOTE: These functions are designed to yield a builder that holds all the
@@ -22,8 +23,8 @@ def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
     yield from sb.builder(mgr)\
         .table('package').create()\
         .table('package').column('id').add()\
+        .table('package').column('id').default().set_from(ct.Undefined)\
         .table('package').column('name').add()\
-        .table('package').column('version').add()\
         .table('package').column('branch_name').add()\
         .table('package').column('current_commit_hash').add()\
         .table('package').column('last_updated_at').add()\
@@ -38,8 +39,8 @@ def downgrade() -> Generator[GeneratesSQLSentence, None, None]:
         .table('package').column('last_updated_at').drop()\
         .table('package').column('current_commit_hash').drop()\
         .table('package').column('branch_name').drop()\
-        .table('package').column('version').drop()\
         .table('package').column('name').drop()\
+        .table('package').column('id').default().drop()\
         .table('package').column('id').drop()\
         .table('package').drop()
 

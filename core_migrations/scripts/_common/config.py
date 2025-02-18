@@ -11,6 +11,7 @@ from .prompt import\
     prompt_notice
 import core_migrations
 from datetime import datetime, timezone
+from core_migrations.backend import SetupParameters
 
 
 mgr = core_migrations.database.core_migrations
@@ -197,5 +198,5 @@ class SetupConfiguration(ActionConfiguration):
 
     @property
     def SCRIPT_NAME(self) -> str:
-        now: str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        now: str = datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
         return f'setup_{self.COMMIT_HASH}_{now}'

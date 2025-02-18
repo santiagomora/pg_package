@@ -17,32 +17,26 @@ DATAFIX_NAME: Optional[str] = None
 
 
 def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
-    # NOTE LOAD FROM migration_sql
     yield from sb.builder(mgr)\
         .function('create_migration').create('execution, text, text')\
 
-    # NOTE LOAD FROM execution_sql
     yield from sb.builder(mgr)\
         .function('create_execution').create('package, text, execution_action')\
         .function('register_execution_commit_hash').create('execution, text')\
         .function('register_execution_migration').create('execution, migration')
 
-    # NOTE LOAD FROM package_sql
     yield from sb.builder(mgr)\
-        .function('create_package').create('text, text, text, text')
+        .function('create_package').create('text, text, text')
 
 
 def downgrade() -> Generator[GeneratesSQLSentence, None, None]:
-    # NOTE DROP FROM package_sql
     yield from sb.builder(mgr)\
-        .function('create_package').drop('text, text, text, text')
+        .function('create_package').drop('text, text, text')
 
-    # NOTE DROP FROM execution_sql
     yield from sb.builder(mgr)\
         .function('register_execution_migration').drop('execution, migration')\
         .function('register_execution_commit_hash').drop('execution, text')\
         .function('create_execution').drop('package, text, execution_action')
 
-    # NOTE DROP FROM migration_sql
     yield from sb.builder(mgr)\
         .function('create_migration').drop('execution, text, text')
