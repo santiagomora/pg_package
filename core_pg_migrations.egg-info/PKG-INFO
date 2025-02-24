@@ -1,0 +1,18 @@
+Metadata-Version: 2.2
+Name: core_pg_migrations
+Version: 1.0.0a0
+Summary: Core C++ migrations
+License: GPL-3.0
+Keywords: test,cmake,extension
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Natural Language :: English
+Classifier: Programming Language :: C
+Classifier: Programming Language :: C++
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"

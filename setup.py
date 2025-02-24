@@ -13,7 +13,7 @@ import glob
 
 
 BITS = struct.calcsize("P") * 8
-PACKAGE_NAME = "core_migrations"
+PACKAGE_NAME = "core_pg_migrations"
 PYTHON_VERSION = "3.12"
 INCLUDE_DEST = os.path.join(sys.prefix, 'include',  f'python{PYTHON_VERSION}', 'sgs')
 
@@ -38,7 +38,7 @@ class CMakeExtension(Extension):
 
 cmake_extensions = [
     CMakeExtension(
-        name='libcore_migrations_db',
+        name='libcore_pg_migrations_db',
         cmake_lists_path=os.path.join(PACKAGE_NAME, 'database', 'cpp', 'lib'),
         so_destination_path=os.path.join(sys.prefix, 'lib',  f'python{PYTHON_VERSION}', 'sgs'),
         include_files_destination_path=os.path.join(sys.prefix, 'include', f'python{PYTHON_VERSION}', 'sgs')
