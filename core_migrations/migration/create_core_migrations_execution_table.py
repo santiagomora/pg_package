@@ -21,7 +21,7 @@ def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
         .sequence('execution_id_seq').create()
 
     yield from sb.builder(mgr)\
-        .enum('execution_action').create()
+        .enum('execution_action').create('setup', 'upgrade', 'downgrade', 'install')
 
     yield from sb.builder(mgr)\
         .table('execution').create()\

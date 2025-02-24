@@ -1,5 +1,5 @@
 import core_pg_bindings as pg
-import core_migrations.database.cpp.module.wrapper as pw
+import core_migrations.database.cpp.module.database_wrapper as pw
 
 
 class execution_id_seq(pg.sequence, base=pg.catalog.int8):

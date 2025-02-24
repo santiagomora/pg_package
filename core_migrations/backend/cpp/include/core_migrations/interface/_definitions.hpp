@@ -6,14 +6,16 @@
 
 #define CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS DATACLASS_DEFINITION(\
     CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS,\
-    (core_migrations::backend::interface, setup_parameters),\
+    (core_migrations::backend, setup_parameters),\
     (DATACLASS_MEMBER(PG_TEXT, script_name))\
     (DATACLASS_MEMBER(STD_VECTOR(PG_TEXT), commit_hashes_sequence))\
     (DATACLASS_MEMBER(STD_VECTOR(PG_TEXT), migration_names))\
     (DATACLASS_MEMBER(PG_TEXT, proc_schema))\
     (DATACLASS_MEMBER(PG_TEXT, tracked_branch))\
     (DATACLASS_MEMBER(PG_TEXT, package_name))\
-    (DATACLASS_MEMBER(PG_TEXT, setup_script))\
+    (DATACLASS_MEMBER(PG_TEXT, setup_script)),\
+    NONE,\
+    (core_migrations::backend::interface, setup_parameters)\
 )
 #define CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS_MEMBERS T_MEMBERS(CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS)
 #define CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS_CONSTRUCTORS (CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS)

@@ -9,7 +9,7 @@ namespace cm_bk_i = core_migrations::backend::interface;
 namespace cm_u_i = core_migrations::util::interface;
 
 
-PYBIND11_MODULE (wrapper, m) 
+PYBIND11_MODULE (backend_wrapper, m) 
 {
     CT_CLASSDEF_REGISTER_INSTANCEABLE(CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS, m);
     m.def("prompt_error", py::overload_cast<const std::string&, const std::optional<std::string>&>(&cm_u_i::prompt_error));

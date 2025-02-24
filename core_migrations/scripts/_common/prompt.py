@@ -4,7 +4,7 @@ import traceback
 from datetime import\
     datetime,\
     timezone
-import core_migrations.backend.cpp.wrapper as bw
+import core_migrations.backend.cpp.backend_wrapper as bw
 
 
 def prompt_yes_no(question) -> bool:

@@ -1,0 +1,4 @@
+recursive-include core_migrations/database/cpp/lib/include/ *
+recursive-include core_migrations/backend/cpp/include/ *
+recursive-include core_migrations/template/ *
+include core_migrations/config.toml

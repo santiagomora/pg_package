@@ -6,7 +6,7 @@ namespace py = pybind11;
 namespace cm = core_migrations::database;
 
 
-PYBIND11_MODULE (wrapper, m) 
+PYBIND11_MODULE (database_wrapper, m) 
 {
     // NOTE TYPES
     PG_ENUM_REGISTER(CORE_MIGRATIONS_DB_EXECUTION_ACTION, m);

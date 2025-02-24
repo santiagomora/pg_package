@@ -12,7 +12,6 @@ PG_TABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_EXECUTION_MIGRATION);
 PG_TABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH);
 
 
-PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_CREATE_EXECUTION);
 std::vector<std::string_view> cm_db_dec::create_execution::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION create_execution (
@@ -33,7 +32,6 @@ $$ LANGUAGE plpgsql VOLATILE STRICT;
 };
 
 
-PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_REGISTER_EXECUTION_COMMIT_HASH);
 std::vector<std::string_view> cm_db_dec::register_execution_commit_hash::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION register_execution_commit_hash (
@@ -49,7 +47,6 @@ $$ LANGUAGE plpgsql VOLATILE STRICT;
 };
 
 
-PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_REGISTER_EXECUTION_MIGRATION);
 std::vector<std::string_view> cm_db_dec::register_execution_migration::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION register_execution_migration (
@@ -65,7 +62,6 @@ $$ LANGUAGE plpgsql VOLATILE STRICT;
 };
 
 
-PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_CREATE_MIGRATION);
 std::vector<std::string_view> cm_db_dec::create_migration::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION create_migration (
@@ -86,7 +82,6 @@ $$ LANGUAGE plpgsql VOLATILE;
 };
 
 
-PG_INVOKABLE_REGISTER_SUBCLASS_REG(CORE_MIGRATIONS_DB_CREATE_PACKAGE);
 std::vector<std::string_view> cm_db_dec::create_package::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION create_package (

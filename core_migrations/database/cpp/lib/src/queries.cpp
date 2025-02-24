@@ -3,7 +3,7 @@
 
 namespace pg        = core_pg_bindings;
 namespace cm_db_dec = core_migrations::database::declarations;
-namespace cm_db_q = core_migrations::database::queries;
+namespace cm_db_q   = core_migrations::database::queries;
 
 
 void cm_db_q::register_execution::operator() (

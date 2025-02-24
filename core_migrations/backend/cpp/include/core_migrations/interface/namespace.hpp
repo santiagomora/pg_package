@@ -4,12 +4,20 @@
 #include <pqxx/pqxx>
 
 
-namespace core_migrations::backend::interface
+namespace core_migrations::backend
 {
 /*
  * NOTE TYPES
  */
 CPP_CLASSDEF_DECLARATION(CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS);
+}
+
+namespace core_migrations::backend::interface
+{
+/*
+ * NOTE TYPES
+ */
+IFACE_CPP_CLASSDEF_DECLARATION(CORE_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS);
 /*
  * NOTE SETUP ENTRY
  * For the setup we need to create and run the migration script and then:

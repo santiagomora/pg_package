@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools", "wheel"]  # Add other build dependencies if needed
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "core_migrations"
+version = "1.0.0a0"
+description = "Core C++ migrations"
+readme = "README.md"
+license = { text = "GPL-3.0" }
+keywords = ["test", "cmake", "extension"]
+requires-python = ">=3.12"
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Natural Language :: English",
+    "Programming Language :: C",
+    "Programming Language :: C++",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython"
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools]
+zip-safe = false

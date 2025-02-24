@@ -1,6 +1,7 @@
 #ifndef CORE_MIGRATIONS_DATABASE_DEFINITIONS
 #define CORE_MIGRATIONS_DATABASE_DEFINITIONS
 #include "core_pg_bindings/all.hpp"
+#include "core_types/all.hpp"
 
 
 #define CORE_MIGRATIONS_DB_EXECUTION_ACTION PG_ENUM_DEFINITION(\
@@ -9,7 +10,8 @@
     (PG_ENUM_VALUE(setup))\
     (PG_ENUM_VALUE(upgrade))\
     (PG_ENUM_VALUE(downgrade))\
-    (PG_ENUM_VALUE(install))\
+    (PG_ENUM_VALUE(install)),\
+    (core_migrations::database::declarations::interface, execution_action)\
 )
 #define CORE_MIGRATIONS_DB_EXECUTION_ACTION_CONSTRUCTORS (CORE_MIGRATIONS_DB_EXECUTION_ACTION)
 
@@ -21,7 +23,9 @@
     (PG_COLUMN(PG_TEXT, name))\
     (PG_COLUMN(PG_TEXT, branch_name))\
     (PG_COLUMN(PG_TEXT, current_commit_hash))\
-    (PG_COLUMN(PG_TIMESTAMPTZ, last_updated_at))\
+    (PG_COLUMN(PG_TIMESTAMPTZ, last_updated_at)),\
+    NONE,\
+    (core_migrations::database::declarations::interface, package)\
 )
 #define CORE_MIGRATIONS_DB_PACKAGE_CONSTRUCTORS (CORE_MIGRATIONS_DB_PACKAGE)
 #define CORE_MIGRATIONS_DB_PACKAGE_MEMBERS T_MEMBERS(CORE_MIGRATIONS_DB_PACKAGE)
@@ -34,7 +38,9 @@
     (PG_COLUMN(PG_INT8, package_id))\
     (PG_COLUMN(PG_TIMESTAMPTZ, created_at))\
     (PG_COLUMN(PG_TEXT, commit_hash))\
-    (PG_COLUMN(CORE_MIGRATIONS_DB_EXECUTION_ACTION, action))\
+    (PG_COLUMN(CORE_MIGRATIONS_DB_EXECUTION_ACTION, action)),\
+    NONE,\
+    (core_migrations::database::declarations::interface, execution)\
 )
 #define CORE_MIGRATIONS_DB_EXECUTION_CONSTRUCTORS (CORE_MIGRATIONS_DB_EXECUTION)
 #define CORE_MIGRATIONS_DB_EXECUTION_MEMBERS T_MEMBERS(CORE_MIGRATIONS_DB_EXECUTION)
@@ -44,7 +50,9 @@
     CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH,\
     (core_migrations::database::declarations, execution_commit_hash),\
     (PG_COLUMN(PG_INT8, execution_id))\
-    (PG_COLUMN(PG_TEXT, commit_hash))\
+    (PG_COLUMN(PG_TEXT, commit_hash)),\
+    NONE,\
+    (core_migrations::database::declarations::interface, execution_commit_hash)\
 )
 #define CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH_CONSTRUCTORS (CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH)
 #define CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH_MEMBERS T_MEMBERS(CORE_MIGRATIONS_DB_EXECUTION_COMMIT_HASH)
@@ -57,7 +65,9 @@
     (PG_COLUMN(PG_INT8, execution_id))\
     (PG_COLUMN(PG_TEXT, name))\
     (PG_COLUMN(STD_OPTIONAL(PG_TEXT), datafix_name))\
-    (PG_COLUMN(PG_TIMESTAMPTZ, created_at))\
+    (PG_COLUMN(PG_TIMESTAMPTZ, created_at)),\
+    NONE,\
+    (core_migrations::database::declarations::interface, migration)\
 )
 #define CORE_MIGRATIONS_DB_MIGRATION_CONSTRUCTORS (CORE_MIGRATIONS_DB_MIGRATION)
 #define CORE_MIGRATIONS_DB_MIGRATION_MEMBERS T_MEMBERS(CORE_MIGRATIONS_DB_MIGRATION)
@@ -67,7 +77,9 @@
     CORE_MIGRATIONS_DB_EXECUTION_MIGRATION,\
     (core_migrations::database::declarations, execution_migration),\
     (PG_COLUMN(PG_INT8, migration_id))\
-    (PG_COLUMN(PG_INT8, execution_id))\
+    (PG_COLUMN(PG_INT8, execution_id)),\
+    NONE,\
+    (core_migrations::database::declarations::interface, execution_migration)\
 )
 #define CORE_MIGRATIONS_DB_EXECUTION_MIGRATION_CONSTRUCTORS (CORE_MIGRATIONS_DB_EXECUTION_MIGRATION)
 #define CORE_MIGRATIONS_DB_EXECUTION_MIGRATION_MEMBERS T_MEMBERS(CORE_MIGRATIONS_DB_EXECUTION_MIGRATION)

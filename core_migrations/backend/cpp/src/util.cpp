@@ -28,8 +28,8 @@ void cm_u_i::prompt_error(const std::string& p_error, const std::optional<std::s
 
 void cm_u::prompt_error(std::ostringstream& p_stream)
 {
-    std::shared_ptr<ct::timestamptz> v_now = ct::timestamptz::utcnow();
-    std::cout << "[ERROR - " << v_now->to_string_("%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
+    ct::timestamptz v_now = ct::utcnow();
+    std::cout << "[ERROR - " << ct::tp_to_string(v_now, "%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
     p_stream.str("");
     p_stream.clear();
     p_stream.seekp(0);
@@ -38,8 +38,8 @@ void cm_u::prompt_error(std::ostringstream& p_stream)
 
 void cm_u::prompt_notice(std::ostringstream& p_stream)
 {
-    std::shared_ptr<ct::timestamptz> v_now = ct::timestamptz::utcnow();
-    std::cout << "[NOTICE - " << v_now->to_string_("%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
+    ct::timestamptz v_now = ct::utcnow();
+    std::cout << "[NOTICE - " << ct::tp_to_string(v_now, "%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
     p_stream.str("");
     p_stream.clear();
     p_stream.seekp(0);

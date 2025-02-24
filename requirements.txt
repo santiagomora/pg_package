@@ -1,28 +1,18 @@
+# "base_types @ git+ssh://git@github.com/santiagomora/base_types.git@55b3ee4faa2a225afb51032c9fdad7ee2cb37469#egg=base_types",
+# "pg_definition @ git+ssh://git@github.com/santiagomora/pg_definition.git@b0c79007761a0f21e038f5a7f266605760e267be#egg=pg_definition",
 annotated-types==0.6.0
--e git+ssh://git@github.com/santiagomora/base_types.git@f54a1b72164a9af5e1c4cefbded10f634de3bf7f#egg=base_types
 compress-pickle==2.1.0
--e git+ssh://git@github.com/santiagomora/pg_package.git@56a24698cbda118f63bf68993d6d8e83f58c0eef#egg=core_migrations
--e git+ssh://git@github.com/santiagomora/pg_definition.git@0f083df160ec859bd2857759ba799ca68c0b49f8#egg=core_pg_bindings
--e git+ssh://git@github.com/santiagomora/base_types.git@184f801636d86085c5bd5eb655b1a639c51d7fd9#egg=core_types
-deepdiff==6.7.1
-iniconfig==2.0.0
 lz4==4.3.3
 mypy==1.8.0
 mypy-extensions==1.0.0
-numpy==2.0.1
-ordered-set==4.1.0
 packaging==24.1
 pluggy==1.5.0
-psycopg==3.1.17
 pybind11==2.13.6
 pydantic==2.10.6
+psycopg==3.1.17
 pydantic_core==2.27.2
-pydantic_numpy==6.0.0
 pytest==8.2.2
-pytest-asyncio==0.25.0
-ruamel.yaml==0.18.6
-ruamel.yaml.clib==0.2.8
 semver==3.0.2
 setuptools==69.0.3
-toml==0.10.2
 typing_extensions==4.12.2
+toml==0.10.2

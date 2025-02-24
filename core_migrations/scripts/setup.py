@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from psycopg import sql
 from core_pg_bindings.builder.common import identifier
 from core_migrations.backend import SetupParameters
-import core_migrations.backend.cpp.wrapper as cmw
+import core_migrations.backend.cpp.backend_wrapper as cmw
 
 
 # executes pip install for a package
