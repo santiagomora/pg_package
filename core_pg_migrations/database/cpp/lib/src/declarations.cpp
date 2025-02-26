@@ -9,38 +9,21 @@ PG_TABLE_REGISTER_SUBCLASS_REG(CORE_PG_MIGRATIONS_DB_PACKAGE);
 PG_TABLE_REGISTER_SUBCLASS_REG(CORE_PG_MIGRATIONS_DB_EXECUTION);
 PG_TABLE_REGISTER_SUBCLASS_REG(CORE_PG_MIGRATIONS_DB_MIGRATION);
 PG_TABLE_REGISTER_SUBCLASS_REG(CORE_PG_MIGRATIONS_DB_EXECUTION_MIGRATION);
-PG_TABLE_REGISTER_SUBCLASS_REG(CORE_PG_MIGRATIONS_DB_EXECUTION_COMMIT_HASH);
 
 
 std::vector<std::string_view> cm_db_dec::create_execution::overloads = {
 R"###(
 CREATE OR REPLACE FUNCTION create_execution (
     p_package package,
-    p_commit_hash text,
     p_action execution_action
 ) RETURNS execution AS $$
 DECLARE 
     v_execution execution;
 BEGIN
-    INSERT INTO execution(package_id, created_at, commit_hash, action)
-    VALUES (p_package.id, now(), p_commit_hash, p_action)
+    INSERT INTO execution(package_id, created_at, action)
+    VALUES (p_package.id, now(), p_action)
     RETURNING * INTO v_execution;
     RETURN v_execution;
-END;
-$$ LANGUAGE plpgsql VOLATILE STRICT;
-)###"
-};
-
-
-std::vector<std::string_view> cm_db_dec::register_execution_commit_hash::overloads = {
-R"###(
-CREATE OR REPLACE FUNCTION register_execution_commit_hash (
-    p_execution execution,
-    p_commit_hash text
-) RETURNS void AS $$
-BEGIN
-    INSERT INTO execution_commit_hash(execution_id, commit_hash)
-    VALUES (p_execution.id, p_commit_hash);
 END;
 $$ LANGUAGE plpgsql VOLATILE STRICT;
 )###"
@@ -67,13 +50,14 @@ R"###(
 CREATE OR REPLACE FUNCTION create_migration (
     p_execution execution,
     p_name text,
+    p_snapshot text,
     p_datafix_name text = NULL
 ) RETURNS migration AS $$
 DECLARE 
     v_migration migration;
 BEGIN
-    INSERT INTO migration(execution_id, name, datafix_name, created_at)
-    VALUES (p_execution.id, p_name, p_datafix_name, now())
+    INSERT INTO migration(execution_id, name, datafix_name, snapshot, created_at)
+    VALUES (p_execution.id, p_name, p_datafix_name, p_snapshot, now())
     RETURNING * INTO v_migration;
     RETURN v_migration;
 END;
@@ -87,13 +71,13 @@ R"###(
 CREATE OR REPLACE FUNCTION create_package (
     p_name text,
     p_branch_name text,
-    p_current_commit_hash text
+    p_current_snapshot text
 ) RETURNS package AS $$
 DECLARE 
     v_package package;
 BEGIN
-    INSERT INTO package(name, branch_name, current_commit_hash, last_updated_at)
-    VALUES (p_name, p_branch_name, p_current_commit_hash, now())
+    INSERT INTO package(name, branch_name, current_snapshot, last_updated_at)
+    VALUES (p_name, p_branch_name, p_current_snapshot, now())
     RETURNING * INTO v_package;
     RETURN v_package;
 END;

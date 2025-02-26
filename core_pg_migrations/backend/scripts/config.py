@@ -12,6 +12,8 @@ from .prompt import\
 import core_pg_migrations
 from datetime import datetime, timezone
 from core_pg_migrations.backend import SetupParameters
+from typing import Any
+import json
 
 
 mgr = core_pg_migrations.database.core_pg_migrations
@@ -21,23 +23,22 @@ class _ExecutionConfiguration:
     def __init__(
         self, package_name: str, args: argparse.Namespace
     ) -> None:
-        sys.path.append('/home/smora/sgs/dev/python/core/pgdriver/test/')
+        # sys.path.append('/home/smora/sgs/dev/python/core/core_pg_bindings/')
         self.args = args
         package = importlib.import_module(package_name)
         package_install_path: str = os.path.dirname(package.__file__)
         with open(f'{package_install_path}/config.toml', 'r') as f:
             self.config = toml.load(f)
         self.package = package
+        self.schema_package = None
+        self.snapshots: dict[str, Any] = {
+            name.split('.')[0]: None for name in os.listdir(self.SNAPSHOT_PATH)
+        }
 
     @property
     @functools.cache
     def PACKAGE_NAME(self) -> str:
         return self.package.__name__
-
-    @property
-    @functools.cache
-    def PROCEDURE_SCHEMA(self) -> str:
-        return self.config["migration"]["procedure_schema"]
 
     @property
     @functools.cache
@@ -47,7 +48,7 @@ class _ExecutionConfiguration:
     @property
     @functools.cache
     def MIGRATION_SCHEMA(self) -> str:
-        return self.config["migration"]["schema"]
+        return importlib.import_module(self.config["migration"]["schema"], package=self.package.__name__)
 
     @property
     @functools.cache
@@ -79,21 +80,10 @@ class _ExecutionConfiguration:
     def DATAFIX_TMP_SCHEMA(self) -> str:
         return f'execution_tmp_namespace_{time.time_ns()}'
 
-
-    # @functools.cache
-    # def register_migration_types(self):
-    #     with core_pg_bindings.adapter_registry(self.DB_DSN) as ar:
-    #         register_types(ar)
-
     @property
     @functools.cache
     def TRACKED_BRANCH(self):
         return self.config["migration"]["tracked_branch"]
-
-    @property
-    @functools.cache
-    def COMMIT_HASH(self):
-        return self.args.commit_hash
 
     @property
     @functools.cache
@@ -104,6 +94,11 @@ class _ExecutionConfiguration:
     @functools.cache
     def SEARCH_PATH(self) -> str:
         return self.config["migration"]["search_path"]
+
+    @property
+    @functools.cache
+    def SNAPSHOT_PATH(self) -> str:
+        return os.path.join(self.MIGRATION_PATH, 'snapshots')
 
     def fill_template(self, name: str, **kwargs) -> str:
         template: str = ''
@@ -117,16 +112,18 @@ class _ExecutionConfiguration:
         with open(destination_file, 'w') as f:
             f.write(script)
 
+    @functools.cache
+    def get_snapshot(self, name: str) -> dict[str, Any]:
+        if name not in self.snapshots:
+            raise FileNotFoundError
+        with open(os.path.join(self.SNAPSHOT_PATH, f'{name}.json')) as f:
+            self.snapshots[name] = json.load(f)
+        return self.snapshots[name]
+
     @property
     @abstractmethod
     def SCRIPT_NAME(self) -> None:
         pass
-
-
-
-# FIXME dont remember what this does
-class GenerateConfiguration(_ExecutionConfiguration):
-    pass
 
 
 class ActionConfiguration(_ExecutionConfiguration):
@@ -188,6 +185,7 @@ class SetupConfiguration(ActionConfiguration):
     ) -> None:
         ActionConfiguration.__init__(self, "core_pg_migrations", args)
         self.execution_action = mgr.execution_action.enum.setup
+        self.procedure_package = None
 
     def opposite_action(self) -> mgr.execution_action.enum:
         return mgr.execution_action.enum.downgrade
@@ -199,4 +197,21 @@ class SetupConfiguration(ActionConfiguration):
     @property
     def SCRIPT_NAME(self) -> str:
         now: str = datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-        return f'setup_{self.COMMIT_HASH}_{now}'
+        return f'setup_{now}'
+
+    @property
+    @functools.cache
+    def PROCEDURE_SCHEMA(self) -> str:
+        return importlib.import_module(self.config["migration"]["procedure_schema"], package=self.package.__name__)
+
+
+class SnapshotConfiguration(ActionConfiguration):
+    def __init__(
+        self, args: argparse.Namespace
+    ) -> None:
+        ActionConfiguration.__init__(self, args.package, args)
+
+    @property
+    @functools.cache
+    def COMMIT_HASH(self):
+        return self.args.commit_hash

@@ -1,23 +1,15 @@
-#ifndef CORE_PG_MIGRATIONS_BACKEND_INTERFACE_NAMESPACE
-#define CORE_PG_MIGRATIONS_BACKEND_INTERFACE_NAMESPACE
-#include "core_pg_migrations/interface/_definitions.hpp"
-#include <pqxx/pqxx>
+#ifndef CORE_PG_MIGRATIONS_INTERFACE_NAMESPACE
+#define CORE_PG_MIGRATIONS_INTERFACE_NAMESPACE
+#include "core_pg_migrations/backend/namespace.hpp"
 
-
-namespace core_pg_migrations::backend
-{
-/*
- * NOTE TYPES
- */
-CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS);
-}
 
 namespace core_pg_migrations::backend::interface
 {
 /*
  * NOTE TYPES
  */
-IFACE_CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BACKEND_INTERFACE_SETUP_PARAMETERS);
+IFACE_CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BACKEND_MIGRATION_PARAM);
+IFACE_CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BACKEND_SETUP_PARAMETERS);
 /*
  * NOTE SETUP ENTRY
  * For the setup we need to create and run the migration script and then:

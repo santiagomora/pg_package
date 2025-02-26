@@ -5,7 +5,7 @@ from core_pg_bindings.builder.common import\
 from typing import\
     Generator,\
     Optional
-from core_pg_migrations.database import core_pg_migrations as mgr
+from typing import Any
 
 
 # NOTE: These functions are designed to yield a builder that holds all the
@@ -13,10 +13,11 @@ from core_pg_migrations.database import core_pg_migrations as mgr
 GENERATED_AT: str = '2024-12-23 17:03:08+00:00'
 DEPENDS_ON: list[str] = ['create_core_pg_migrations_migration_table', 'create_core_pg_migrations_execution_table']
 DATAFIX_NAME: Optional[str] = None
+SNAPSHOT: str = '4d72aca8a7ebb5ea378335e26c5e9434492d8121'
 
 
-def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
-    yield from sb.builder(mgr)\
+def upgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
+    yield from sb.builder(snapshot)\
         .table('execution_migration').create()\
         .table('execution_migration').column('execution_id').add()\
         .table('execution_migration').column('migration_id').add()\
@@ -25,8 +26,8 @@ def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
         .table('execution_migration').foreign_key('execution_migration_migration_id_fk').add()
 
 
-def downgrade() -> Generator[GeneratesSQLSentence, None, None]:
-    yield from sb.builder(mgr)\
+def downgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
+    yield from sb.builder(snapshot)\
         .table('execution_migration').foreign_key('execution_migration_migration_id_fk').drop()\
         .table('execution_migration').foreign_key('execution_migration_execution_id_fk').drop()\
         .table('execution_migration').primary_key('execution_migration_pk').drop()\

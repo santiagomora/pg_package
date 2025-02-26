@@ -39,9 +39,6 @@ class MigrationWrapper:
                     self.datafix_functions, fns, config.DATAFIX_TMP_SCHEMA, None
                 )
 
-    def __repr__(self):
-        return f'Migration(NAME={self.NAME}, DEPENDS_ON={self.DEPENDS_ON})'
-
     @property
     @functools.cache
     def NAME(self):
@@ -62,21 +59,12 @@ class MigrationWrapper:
         errors: list[str] = []
         creating: list[str] = []
         opposite_script: mgr.execution_action.enum = self.config.opposite_action()
-        for c_sentence in self.upgrade():
+        snapshot = self.config.get_snapshot(self.SNAPSHOT)
+        for c_sentence in self.upgrade(snapshot):
             if isinstance(c_sentence, sb.Create):
                 creating.append(c_sentence.component.name)
-            if c_sentence.component.name in creating\
-                and isinstance(c_sentence, sb.Alter)\
-                    and isinstance(c_sentence.change, sb.Add):
-                # we are defining some type, we only need the drop constraint, we ignore following alters that add things to definition
-                continue
-            # if isinstance(c_sentence, sb.Function.Execute):
-            #     # try to execute a function
-            #     if c_sentence.component.name not in self.datafix_functions:
-            #         errors.append(f'"{c_sentence}" can only execute datafix functions in {self.execution_action} script. Please associate a datafix file.')
-            #         continue
             has_opposite: bool = False
-            for rb_sentence in self.downgrade():
+            for rb_sentence in self.downgrade(snapshot):
                 has_opposite = has_opposite or c_sentence.is_opposite(rb_sentence)
             if not has_opposite:
                 errors.append(f'"{c_sentence}" must have an opposite sentence in {opposite_script} script')
@@ -100,7 +88,7 @@ class ExecutionHeap(list[MigrationWrapper]):
             spacing = "  "*int(math.log(level, 2))
             extrapadding = "        "
             dependencies = f'{spacing}{extrapadding}'+f"\n{spacing}{extrapadding}".join(migration.DEPENDS_ON)
-            res += f'{spacing}*** NAME: {migration.NAME}\n{spacing}    DEPENDS_ON: [\n{dependencies}]\n\n'
+            res += f'{spacing}*** NAME: {migration.NAME}\n{spacing}    DEPENDS_ON: [\n{dependencies}]\n{spacing}    SNAPSHOT: {migration.SNAPSHOT}\n\n'
             if ctr % level == 0:
                 level *= 2
                 ctr = 0
@@ -174,7 +162,7 @@ def get_migration_setup_heap(config: ActionConfiguration) -> ExecutionHeap:
     exec_heap: ExecutionHeap = ExecutionHeap(config)
     # get all migration modules and see their status in the database
     for f in os.listdir(config.MIGRATION_PATH):
-        if f.startswith('__'):
+        if f.startswith('__') or f == 'snapshots':
             continue
         module = exec_heap.get_migration(f'{config.MIGRATION_SUBMODULE.__name__}.{f.split('.')[0]}')
         module.check_consistency()

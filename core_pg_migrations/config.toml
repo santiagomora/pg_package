@@ -5,5 +5,5 @@ var_directory = "./var"
 datafix_directory = "./datafix"
 tracked_branch = "trunk"
 search_path = ["core_pg_migrations"]
-procedure_schema = "core_migration_procedure"
-schema = "core_pg_migrations"
+procedure_schema = ".database.core_pg_execution_procedures"
+schema = ".database.core_pg_migrations"

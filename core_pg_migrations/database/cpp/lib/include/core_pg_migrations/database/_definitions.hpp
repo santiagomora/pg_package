@@ -22,7 +22,7 @@
     (PG_COLUMN(PG_INT8, id))\
     (PG_COLUMN(PG_TEXT, name))\
     (PG_COLUMN(PG_TEXT, branch_name))\
-    (PG_COLUMN(PG_TEXT, current_commit_hash))\
+    (PG_COLUMN(PG_TEXT, current_snapshot))\
     (PG_COLUMN(PG_TIMESTAMPTZ, last_updated_at)),\
     NONE,\
     (core_pg_migrations::database::declarations::interface, package)\
@@ -37,7 +37,6 @@
     (PG_COLUMN(PG_INT8, id))\
     (PG_COLUMN(PG_INT8, package_id))\
     (PG_COLUMN(PG_TIMESTAMPTZ, created_at))\
-    (PG_COLUMN(PG_TEXT, commit_hash))\
     (PG_COLUMN(CORE_PG_MIGRATIONS_DB_EXECUTION_ACTION, action)),\
     NONE,\
     (core_pg_migrations::database::declarations::interface, execution)\
@@ -46,26 +45,15 @@
 #define CORE_PG_MIGRATIONS_DB_EXECUTION_MEMBERS T_MEMBERS(CORE_PG_MIGRATIONS_DB_EXECUTION)
 
 
-#define CORE_PG_MIGRATIONS_DB_EXECUTION_COMMIT_HASH PG_TABLE_DEFINITION(\
-    CORE_PG_MIGRATIONS_DB_EXECUTION_COMMIT_HASH,\
-    (core_pg_migrations::database::declarations, execution_commit_hash),\
-    (PG_COLUMN(PG_INT8, execution_id))\
-    (PG_COLUMN(PG_TEXT, commit_hash)),\
-    NONE,\
-    (core_pg_migrations::database::declarations::interface, execution_commit_hash)\
-)
-#define CORE_PG_MIGRATIONS_DB_EXECUTION_COMMIT_HASH_CONSTRUCTORS (CORE_PG_MIGRATIONS_DB_EXECUTION_COMMIT_HASH)
-#define CORE_PG_MIGRATIONS_DB_EXECUTION_COMMIT_HASH_MEMBERS T_MEMBERS(CORE_PG_MIGRATIONS_DB_EXECUTION_COMMIT_HASH)
-
-
 #define CORE_PG_MIGRATIONS_DB_MIGRATION PG_TABLE_DEFINITION(\
     CORE_PG_MIGRATIONS_DB_MIGRATION,\
     (core_pg_migrations::database::declarations, migration),\
     (PG_COLUMN(PG_INT8, id))\
     (PG_COLUMN(PG_INT8, execution_id))\
     (PG_COLUMN(PG_TEXT, name))\
+    (PG_COLUMN(PG_TEXT, snapshot))\
     (PG_COLUMN(STD_OPTIONAL(PG_TEXT), datafix_name))\
-    (PG_COLUMN(PG_TIMESTAMPTZ, created_at)),\
+    (PG_COLUMN(STD_OPTIONAL(PG_TIMESTAMPTZ), created_at)),\
     NONE,\
     (core_pg_migrations::database::declarations::interface, migration)\
 )
@@ -88,12 +76,6 @@
 #define CORE_PG_MIGRATIONS_DB_CREATE_EXECUTION PG_INVOKABLE(\
     CORE_PG_MIGRATIONS_DB_CREATE_EXECUTION,\
     (core_pg_migrations::database::declarations, create_execution)\
-)
-
-
-#define CORE_PG_MIGRATIONS_DB_REGISTER_EXECUTION_COMMIT_HASH PG_INVOKABLE(\
-    CORE_PG_MIGRATIONS_DB_REGISTER_EXECUTION_COMMIT_HASH,\
-    (core_pg_migrations::database::declarations, register_execution_commit_hash)\
 )
 
 

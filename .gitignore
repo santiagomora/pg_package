@@ -4,7 +4,7 @@ __pycache__
 bin
 lib64
 .cache
-core_migrations.egg-info
+core_pg_migrations.egg-info
 dist
 commit.msg
 .commit.msg.swp

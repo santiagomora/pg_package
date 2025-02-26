@@ -11,8 +11,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -fPIC -O2 -march=native -flto=auto -Wno-attri
 
 find_package(pybind11 REQUIRED)
 add_library(${PROJECT_NAME} SHARED
-    src/declarations.cpp
-    src/queries.cpp)
+    src/declarations.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${SGS_INCLUDE_PATH})
 target_include_directories(${PROJECT_NAME} PRIVATE ./include)

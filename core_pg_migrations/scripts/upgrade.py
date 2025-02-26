@@ -1,15 +1,15 @@
 import argparse
 import sys
-from ._common.config import\
+from core_pg_migrations.backend.scripts.config import\
     UpgradeConfiguration
-from ._common.check_install import\
+from core_pg_migrations.backend.scripts.check_install import\
     InstallException
-from ._common.execution import\
+from core_pg_migrations.backend.scripts.execution import\
     get_migration_setup_heap,\
     get_migration_execution_heap,\
     MigrationWrapper,\
     ExecutionHeap
-from ._common.prompt import\
+from core_pg_migrations.backend.scripts.prompt import\
     prompt_yes_no,\
     prompt_notice,\
     prompt_error

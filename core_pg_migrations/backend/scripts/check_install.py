@@ -3,17 +3,17 @@ from core_pg_migrations.database import core_pg_migrations as mgr
 from .config import\
     ActionConfiguration
 
+
+# FIXME we should see if all the types declared in the last snapshot exist in the database
 tables = [
     mgr.package,
     mgr.execution,
-    mgr.execution_commit_hash,
     mgr.migration,
     mgr.execution_migration]
 
 
 functions = [
     mgr.create_execution,
-    mgr.register_execution_commit_hash,
     mgr.register_execution_migration,
     mgr.create_migration,
     mgr.create_package]

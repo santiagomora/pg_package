@@ -1,12 +1,15 @@
 import psycopg
-import core_pg_migrations.scripts._common as cm
+import core_pg_migrations.backend.scripts as cm
 import argparse
 import sys
 from datetime import datetime, timezone
 from psycopg import sql
 from core_pg_bindings.builder.common import identifier
-from core_pg_migrations.backend import SetupParameters
+from core_pg_migrations.backend import\
+    MigrationParam,\
+    SetupParameters
 import core_pg_migrations.backend.cpp.backend_wrapper as cmw
+from core_pg_bindings.common.inspection import schema_name
 
 
 # executes pip install for a package
@@ -25,10 +28,10 @@ def generate_setup_script(config: cm.SetupConfiguration) -> None:
             while len(execution_heap) > 0:
                 migration: cm.MigrationWrapper = execution_heap.pop()
                 cm.prompt_notice(f'Generating migration: {migration.NAME}')
-                migrations.append(migration.NAME)
+                migrations.append(MigrationParam(migration.NAME, migration.SNAPSHOT, migration.DATAFIX_NAME))
                 transaction_queries = []
                 try:
-                    for sentence in migration.upgrade():
+                    for sentence in migration.upgrade(config.get_snapshot(migration.SNAPSHOT)):
                         sql_sentence, identifiers, params = sentence.sql_sentence_params()
                         transaction_queries.append(cursor.mogrify(
                             psycopg.sql.SQL(sql_sentence).format(*identifiers).as_string(connection),
@@ -45,22 +48,19 @@ def generate_setup_script(config: cm.SetupConfiguration) -> None:
             'setup', setup_script_transactions="\n\n".join(setup_script_transactions),
             procedure_name="{}", procedure_schema="{}"
         )
-        script = sql.SQL(script).format(identifier(config.SCRIPT_NAME), sql.Literal(config.MIGRATION_SCHEMA))\
+        script = sql.SQL(script).format(identifier(config.SCRIPT_NAME), sql.Literal(schema_name(config.MIGRATION_SCHEMA)))\
             .as_string(connection)
-    commits = ['test', 'commit 1', 'commit 2']
     if config.DRY_RUN:
         cm.prompt_notice(f'Migration script dry run:\
                              \nCONNECTION:\n\t{config.DB_DSN}\
                              \nSCRIPT NAME:\n\t{config.SCRIPT_NAME}\
-                             \nCOMMITS:\n\t{"\n\t".join(commits)}\
-                             \nMIGRATIONS:\n\t{"\n\t".join(migrations)}\
+                             \nMIGRATIONS:\n\t{"\n\t".join([f'{m.name} ({m.snapshot})' for m in migrations])}\
                              \nSCRIPT:\n{script}')
     else:
         cmw.setup_core_pg_migrations_in_database(SetupParameters(
             script_name=config.SCRIPT_NAME,
-            commit_hashes_sequence=commits,
-            migration_names=migrations,
-            proc_schema=config.PROCEDURE_SCHEMA,
+            migrations=migrations,
+            proc_schema=schema_name(config.PROCEDURE_SCHEMA),
             tracked_branch=config.TRACKED_BRANCH,
             package_name='core_pg_migrations',
             setup_script=script
@@ -72,7 +72,6 @@ if __name__ == '__main__':
         prog='Setup Migration',
         description='Initizalizes migration tables when core_pg_migrations is first installed',
         epilog='')
-    parser.add_argument('--commit-hash', required=True, type=str, help='Indicate a commit hash to setup')
     parser.add_argument('--dry-run', action='store_true', help='Output the setup script to command interface without applying it')
     args: argparse.Namespace = parser.parse_args(sys.argv[1:])
     config = cm.SetupConfiguration(args)

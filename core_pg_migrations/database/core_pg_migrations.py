@@ -37,16 +37,6 @@ class execution(pw.execution, metaclass=pg.table):
     pass
 
 
-# get the commits with git rev-list fd426b1cbe40d263f322e0ead00361e477eb58d9^..HEAD
-@pg.table.primary_key(
-    name='execution_commit_hash_pk', columns=('execution_id', 'commit_hash',))
-@pg.table.foreign_key(
-    name='execution_commit_hash_execution_id_fk', columns=('execution_id',),
-    references=execution, referenced_columns=('id',))
-class execution_commit_hash(pw.execution_commit_hash, metaclass=pg.table):
-    pass
-
-
 @pg.table.primary_key(
     name='migration_pk', columns=('id',))
 @pg.table.unique_constraint(
@@ -75,10 +65,6 @@ class execution_migration(pw.execution_migration, metaclass=pg.table):
 
 
 class create_execution(pw.create_execution, metaclass=pg.function):
-    pass
-
-
-class register_execution_commit_hash(pw.register_execution_commit_hash, metaclass=pg.function):
     pass
 
 

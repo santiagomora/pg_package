@@ -5,8 +5,7 @@ from core_pg_bindings.builder.common import\
 from typing import\
     Generator,\
     Optional
-from core_pg_migrations.database import core_pg_migrations as mgr
-import core_pg_bindings as pg
+from typing import Any
 
 
 # NOTE: These functions are designed to yield a builder that holds all the
@@ -14,29 +13,28 @@ import core_pg_bindings as pg
 GENERATED_AT: str = '2024-12-23 17:03:40+00:00'
 DEPENDS_ON: list[str] = ['create_core_pg_migrations_package_table', 'create_core_pg_migrations_execution_table', 'create_core_pg_migrations_migration_table', 'create_core_pg_migrations_execution_migration_table']
 DATAFIX_NAME: Optional[str] = None
+SNAPSHOT: str = '4d72aca8a7ebb5ea378335e26c5e9434492d8121'
 
 
-def upgrade() -> Generator[GeneratesSQLSentence, None, None]:
-    yield from sb.builder(mgr)\
-        .function('create_migration').create('execution, text, text')\
+def upgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
+    yield from sb.builder(snapshot)\
+        .function('create_migration').create('execution, text, text, text')\
 
-    yield from sb.builder(mgr)\
-        .function('create_execution').create('package, text, execution_action')\
-        .function('register_execution_commit_hash').create('execution, text')\
+    yield from sb.builder(snapshot)\
+        .function('create_execution').create('package, execution_action')\
         .function('register_execution_migration').create('execution, migration')
 
-    yield from sb.builder(mgr)\
+    yield from sb.builder(snapshot)\
         .function('create_package').create('text, text, text')
 
 
-def downgrade() -> Generator[GeneratesSQLSentence, None, None]:
-    yield from sb.builder(mgr)\
+def downgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
+    yield from sb.builder(snapshot)\
         .function('create_package').drop('text, text, text')
 
-    yield from sb.builder(mgr)\
+    yield from sb.builder(snapshot)\
         .function('register_execution_migration').drop('execution, migration')\
-        .function('register_execution_commit_hash').drop('execution, text')\
-        .function('create_execution').drop('package, text, execution_action')
+        .function('create_execution').drop('package, execution_action')
 
-    yield from sb.builder(mgr)\
-        .function('create_migration').drop('execution, text, text')
+    yield from sb.builder(snapshot)\
+        .function('create_migration').drop('execution, text, text, text')

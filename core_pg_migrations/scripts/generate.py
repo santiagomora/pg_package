@@ -6,9 +6,9 @@ from datetime import datetime,\
     timezone
 from typing import\
     Optional
-from ._common.config import\
+from core_pg_migrations.backend.scripts.config import\
     GenerateConfiguration
-from ._common.prompt import\
+from core_pg_migrations.backend.scripts.prompt import\
     prompt_notice,\
     prompt_error
 

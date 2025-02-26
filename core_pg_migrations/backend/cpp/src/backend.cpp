@@ -32,10 +32,17 @@ void cm_bk::create_and_execute_setup_script(
 
 void cm_bk::register_setup_package_and_execution(
     pqxx::work& p_tx, pg::text& p_package_name, pg::text& p_tracked_branch,
-    std::vector<pg::text>& p_commit_hashes, std::vector<pg::text>& p_migration_names
+    std::vector<cm_bk::migration_param>& p_migrations
 ) {
-    cm_db_dec::package v_package = cm_db_q::create_package{}(p_tx, p_package_name, p_tracked_branch, p_commit_hashes[0]);
+    // FIXME there needs to be a mechanism to determine the last snapshot, for now we pick the first member of p_migrations
+    cm_db_dec::package v_package = cm_db_q::create_package{}(p_tx, p_package_name, p_tracked_branch, p_migrations[0].snapshot);
     cm_db_dec::execution_action v_action = cm_db_dec::execution_action::setup;
-    cm_db_dec::execution v_execution = cm_db_q::create_execution{}(p_tx, v_package, v_package.current_commit_hash, v_action);
-    cm_db_q::register_execution{}(p_tx, v_execution, p_commit_hashes, p_migration_names);
+    cm_db_dec::execution v_execution = cm_db_q::create_execution{}(p_tx, v_package, v_action);
+    cm_db_q::create_migration create_migration_query;
+    cm_db_q::register_execution_migration register_execution_migration_query;
+    for(auto& v_migration : p_migrations)
+    {
+        cm_db_dec::migration v_db_migration = create_migration_query(p_tx, v_execution, v_migration.name, v_migration.snapshot, v_migration.datafix_name);
+        register_execution_migration_query(p_tx, v_execution, v_db_migration);
+    }
 }
