@@ -1,5 +1,5 @@
 import sys
-from typing import Any
+from typing import Any, Optional
 import traceback
 from datetime import\
     datetime,\
@@ -26,8 +26,8 @@ def prompt_notice(notice: str) -> None:
     bw.prompt_notice(notice)
 
 
-def prompt_error(err: str) -> None:
-    bw.prompt_error(err, str(traceback.format_exc()))
+def prompt_error(err: str, e: Optional[Exception] = None) -> None:
+    bw.prompt_error(err, None if e is None else "\n".join(traceback.format_tb(e.__traceback__)))
 
 
 def log_notice(diag):

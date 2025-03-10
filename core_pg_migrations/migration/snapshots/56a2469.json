@@ -1,0 +1,903 @@
+{
+    "previous_snapshot": null,
+    "next_snapshot": null,
+    "core_pg_migrations": {
+        "execution_id_seq": {
+            "schema": "core_pg_migrations",
+            "base_type": {
+                "schema": "pg_catalog",
+                "type": "int8"
+            },
+            "comment": null,
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "execution_id_seq"
+            },
+            "kind": "sequence",
+            "min_value": null,
+            "max_value": null,
+            "increment": null,
+            "cycle": null
+        },
+        "package_id_seq": {
+            "schema": "core_pg_migrations",
+            "base_type": {
+                "schema": "pg_catalog",
+                "type": "int8"
+            },
+            "comment": null,
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "package_id_seq"
+            },
+            "kind": "sequence",
+            "min_value": null,
+            "max_value": null,
+            "increment": null,
+            "cycle": null
+        },
+        "snapshot_id_seq": {
+            "schema": "core_pg_migrations",
+            "base_type": {
+                "schema": "pg_catalog",
+                "type": "int8"
+            },
+            "comment": null,
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "snapshot_id_seq"
+            },
+            "kind": "sequence",
+            "min_value": null,
+            "max_value": null,
+            "increment": null,
+            "cycle": null
+        },
+        "migration_id_seq": {
+            "schema": "core_pg_migrations",
+            "base_type": {
+                "schema": "pg_catalog",
+                "type": "int8"
+            },
+            "comment": null,
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "migration_id_seq"
+            },
+            "kind": "sequence",
+            "min_value": null,
+            "max_value": null,
+            "increment": null,
+            "cycle": null
+        },
+        "execution_action": {
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "execution_action"
+            },
+            "comment": null,
+            "schema": "core_pg_migrations",
+            "kind": "enum",
+            "members": {
+                "0": "upgrade",
+                "1": "downgrade"
+            }
+        },
+        "package": {
+            "schema": "core_pg_migrations",
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "package"
+            },
+            "bases": [],
+            "comment": null,
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null,
+                    "default": {
+                        "type": "sequence_nextval",
+                        "name": "package_id_seq",
+                        "schema": "core_pg_migrations"
+                    }
+                },
+                "name": {
+                    "name": "name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "remote_name": {
+                    "name": "remote_name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "tracked_branch_name": {
+                    "name": "tracked_branch_name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "schema_name": {
+                    "name": "schema_name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "procedure_schema_name": {
+                    "name": "procedure_schema_name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                }
+            },
+            "primary_key": {
+                "name": "package_pk",
+                "columns": [
+                    "id"
+                ]
+            },
+            "foreign_keys": {},
+            "unique_constraints": {
+                "package_unique_name_constraint": {
+                    "name": "package_unique_name_constraint",
+                    "columns": [
+                        "name"
+                    ]
+                }
+            },
+            "indexes": {},
+            "kind": "table"
+        },
+        "snapshot": {
+            "schema": "core_pg_migrations",
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "snapshot"
+            },
+            "bases": [],
+            "comment": null,
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null,
+                    "default": {
+                        "type": "sequence_nextval",
+                        "name": "snapshot_id_seq",
+                        "schema": "core_pg_migrations"
+                    }
+                },
+                "package_id": {
+                    "name": "package_id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "parent_id": {
+                    "name": "parent_id",
+                    "required": false,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null,
+                    "default": null
+                },
+                "child_id": {
+                    "name": "child_id",
+                    "required": false,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null,
+                    "default": null
+                },
+                "commit_hash": {
+                    "name": "commit_hash",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                }
+            },
+            "primary_key": {
+                "name": "snapshot_pk",
+                "columns": [
+                    "id"
+                ]
+            },
+            "foreign_keys": {
+                "snapshot_child_id_fk": {
+                    "name": "snapshot_child_id_fk",
+                    "columns": [
+                        "child_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "snapshot"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                },
+                "snapshot_parent_id_fk": {
+                    "name": "snapshot_parent_id_fk",
+                    "columns": [
+                        "parent_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "snapshot"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                },
+                "snapshot_package_id_fk": {
+                    "name": "snapshot_package_id_fk",
+                    "columns": [
+                        "package_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "package"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                }
+            },
+            "unique_constraints": {
+                "snapshot_unique_commit_hash_constraint": {
+                    "name": "snapshot_unique_commit_hash_constraint",
+                    "columns": [
+                        "package_id",
+                        "commit_hash"
+                    ]
+                }
+            },
+            "indexes": {},
+            "kind": "table"
+        },
+        "execution": {
+            "schema": "core_pg_migrations",
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "execution"
+            },
+            "bases": [],
+            "comment": null,
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null,
+                    "default": {
+                        "type": "sequence_nextval",
+                        "name": "execution_id_seq",
+                        "schema": "core_pg_migrations"
+                    }
+                },
+                "package_id": {
+                    "name": "package_id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "action": {
+                    "name": "action",
+                    "required": true,
+                    "type": {
+                        "schema": "core_pg_migrations",
+                        "type": "execution_action"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "timestamptz"
+                    },
+                    "comment": null,
+                    "check": null
+                }
+            },
+            "primary_key": {
+                "name": "execution_pk",
+                "columns": [
+                    "id"
+                ]
+            },
+            "foreign_keys": {
+                "execution_package_id_fk": {
+                    "name": "execution_package_id_fk",
+                    "columns": [
+                        "package_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "package"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                }
+            },
+            "unique_constraints": {},
+            "indexes": {},
+            "kind": "table"
+        },
+        "migration": {
+            "schema": "core_pg_migrations",
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "migration"
+            },
+            "bases": [],
+            "comment": null,
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null,
+                    "default": {
+                        "type": "sequence_nextval",
+                        "name": "migration_id_seq",
+                        "schema": "core_pg_migrations"
+                    }
+                },
+                "snapshot_id": {
+                    "name": "snapshot_id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "name": {
+                    "name": "name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "datafix_name": {
+                    "name": "datafix_name",
+                    "required": false,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null,
+                    "default": null
+                },
+                "upgrade_script_name": {
+                    "name": "upgrade_script_name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "downgrade_script_name": {
+                    "name": "downgrade_script_name",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                }
+            },
+            "primary_key": {
+                "name": "migration_pk",
+                "columns": [
+                    "id"
+                ]
+            },
+            "foreign_keys": {
+                "migration_snapshot_id_fk": {
+                    "name": "migration_snapshot_id_fk",
+                    "columns": [
+                        "snapshot_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "snapshot"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                }
+            },
+            "unique_constraints": {
+                "migration_unique_datafix_name_constraint": {
+                    "name": "migration_unique_datafix_name_constraint",
+                    "columns": [
+                        "snapshot_id",
+                        "datafix_name"
+                    ]
+                },
+                "migration_unique_name_constraint": {
+                    "name": "migration_unique_name_constraint",
+                    "columns": [
+                        "snapshot_id",
+                        "name"
+                    ]
+                }
+            },
+            "indexes": {},
+            "kind": "table"
+        },
+        "migration_dependency_relation": {
+            "schema": "core_pg_migrations",
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "migration_dependency_relation"
+            },
+            "bases": [],
+            "comment": null,
+            "columns": {
+                "migration_id": {
+                    "name": "migration_id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "depends_on_id": {
+                    "name": "depends_on_id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                }
+            },
+            "primary_key": {
+                "name": "migration_dependency_relation_pk",
+                "columns": [
+                    "migration_id",
+                    "depends_on_id"
+                ]
+            },
+            "foreign_keys": {
+                "migration_dependency_relation_depends_on_id_fk": {
+                    "name": "migration_dependency_relation_depends_on_id_fk",
+                    "columns": [
+                        "depends_on_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "migration"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                },
+                "migration_dependency_relation_migration_id_fk": {
+                    "name": "migration_dependency_relation_migration_id_fk",
+                    "columns": [
+                        "migration_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "migration"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                }
+            },
+            "unique_constraints": {},
+            "indexes": {},
+            "kind": "table"
+        },
+        "execution_snapshot_relation": {
+            "schema": "core_pg_migrations",
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "execution_snapshot_relation"
+            },
+            "bases": [],
+            "comment": null,
+            "columns": {
+                "execution_id": {
+                    "name": "execution_id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "snapshot_id": {
+                    "name": "snapshot_id",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                },
+                "integrity_hash": {
+                    "name": "integrity_hash",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "text"
+                    },
+                    "comment": null,
+                    "check": null
+                }
+            },
+            "primary_key": {
+                "name": "execution_snapshot_relation_pk",
+                "columns": [
+                    "execution_id",
+                    "snapshot_id"
+                ]
+            },
+            "foreign_keys": {
+                "execution_snapshot_relation_snapshot_id_fk": {
+                    "name": "execution_snapshot_relation_snapshot_id_fk",
+                    "columns": [
+                        "snapshot_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "snapshot"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                },
+                "execution_snapshot_relation_execution_id_fk": {
+                    "name": "execution_snapshot_relation_execution_id_fk",
+                    "columns": [
+                        "execution_id"
+                    ],
+                    "references": {
+                        "schema": "core_pg_migrations",
+                        "type": "execution"
+                    },
+                    "referenced_columns": [
+                        "id"
+                    ],
+                    "on_update": "foreign_key_action.NO_ACTION",
+                    "on_delete": "foreign_key_action.NO_ACTION"
+                }
+            },
+            "unique_constraints": {
+                "execution_snapshot_relation_uix": {
+                    "name": "execution_snapshot_relation_uix",
+                    "columns": [
+                        "execution_id",
+                        "snapshot_id",
+                        "integrity_hash"
+                    ]
+                }
+            },
+            "indexes": {},
+            "kind": "table"
+        },
+        "create_execution": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "package, execution_action": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_execution (\n    p_package package, p_action execution_action\n) RETURNS execution AS $$\nDECLARE \n    v_execution execution;\nBEGIN\n    INSERT INTO execution(package_id, created_at, action)\n    VALUES (p_package.id, now(), p_action)\n    RETURNING * INTO v_execution;\n    RETURN v_execution;\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "param_names": [
+                        "p_package",
+                        "p_action"
+                    ],
+                    "param_types": [
+                        "package",
+                        "execution_action"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "create_execution"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "create_migration": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "snapshot, text, text, text, text": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_migration (\n    p_snapshot snapshot, p_name text, p_upgrade_procedure_name text,\n    p_downgrade_procedure_name text, p_datafix_name text = NULL\n) RETURNS migration AS $$\nDECLARE \n    v_migration migration;\nBEGIN\n    INSERT INTO migration(name, upgrade_script_name, downgrade_script_name, datafix_name, snapshot_id)\n    VALUES (p_name, p_upgrade_procedure_name, p_downgrade_procedure_name, p_datafix_name, p_snapshot.id)\n    RETURNING * INTO v_migration;\n    RETURN v_migration;\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
+                    "param_names": [
+                        "p_snapshot",
+                        "p_name",
+                        "p_upgrade_procedure_name",
+                        "p_downgrade_procedure_name",
+                        "p_datafix_name"
+                    ],
+                    "param_types": [
+                        "snapshot",
+                        "text",
+                        "text",
+                        "text",
+                        "text"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "create_migration"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "create_package": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "text, text, text, text, text": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_package (\n    p_name text, p_remote_name text, p_tracked_branch_name text,\n    p_schema_name text, p_procedure_schema_name text\n) RETURNS package AS $$\nDECLARE \n    v_package package;\nBEGIN\n    INSERT INTO package(name, remote_name, tracked_branch_name, schema_name, procedure_schema_name)\n    VALUES (p_name, p_remote_name, p_tracked_branch_name, p_schema_name, p_procedure_schema_name)\n    RETURNING * INTO v_package;\n    RETURN v_package;\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "param_names": [
+                        "p_name",
+                        "p_remote_name",
+                        "p_tracked_branch_name",
+                        "p_schema_name",
+                        "p_procedure_schema_name"
+                    ],
+                    "param_types": [
+                        "text",
+                        "text",
+                        "text",
+                        "text",
+                        "text"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "create_package"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "create_snapshot": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "int8, text, text, text": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_snapshot (\n    p_package_id int8, p_hash text,\n    p_parent_hash text = NULL, p_child_hash text = NULL\n) RETURNS snapshot AS $$\nDECLARE\n    v_snapshot snapshot;\n    v_package package;\n    v_child_snapshot snapshot;\n    v_parent_snapshot snapshot;\nBEGIN\n    SELECT * FROM package p\n        INTO v_package\n        WHERE id = p_package_id\n    ;\n    SELECT * FROM snapshot s\n        INTO v_parent_snapshot\n        WHERE commit_hash = p_parent_hash\n    ;\n    SELECT * FROM snapshot s\n        INTO v_child_snapshot\n        WHERE commit_hash = p_child_hash\n    ;\n    RETURN create_snapshot(v_package, p_hash, v_parent_snapshot, v_child_snapshot);\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
+                    "param_names": [
+                        "p_package_id",
+                        "p_hash",
+                        "p_parent_hash",
+                        "p_child_hash"
+                    ],
+                    "param_types": [
+                        "int8",
+                        "text",
+                        "text",
+                        "text"
+                    ]
+                },
+                "package, text, snapshot, snapshot": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_snapshot (\n    p_package package, p_hash text,\n    p_parent snapshot, p_child snapshot\n) RETURNS snapshot AS $$\nDECLARE\n    v_snapshot snapshot;\nBEGIN\n    INSERT INTO snapshot(package_id, commit_hash, child_id, parent_id, created_at)\n    VALUES (p_package.id, p_hash, id(p_child), id(p_parent), now())\n    RETURNING * INTO v_snapshot;\n    RETURN v_snapshot;\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
+                    "param_names": [
+                        "p_package",
+                        "p_hash",
+                        "p_parent",
+                        "p_child"
+                    ],
+                    "param_types": [
+                        "package",
+                        "text",
+                        "snapshot",
+                        "snapshot"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "create_snapshot"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "get_applied_snapshots": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "text": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION get_applied_snapshots (\n    p_package_name text\n) RETURNS SETOF text AS $$\nDECLARE\n    v_package package;\nBEGIN\n    SELECT * INTO v_package\n    FROM package WHERE name = p_package_name LIMIT 1;\n    IF v_package IS NULL THEN\n        RETURN;\n    ELSE\n        RETURN QUERY\n            SELECT * FROM get_applied_snapshots(v_package);\n    END IF;\nEND;\n$$ LANGUAGE plpgsql STABLE;\n",
+                    "param_names": [
+                        "p_package_name"
+                    ],
+                    "param_types": [
+                        "text"
+                    ]
+                },
+                "package": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION get_applied_snapshots (\n    p_package package\n) RETURNS SETOF text AS $$\nBEGIN\n    RETURN QUERY\n        WITH snapshot_last_action AS (\n            SELECT\n                s.commit_hash, e.action,\n                ROW_NUMBER() OVER(PARTITION BY s.id ORDER BY e.created_at DESC) AS rank\n            FROM execution_snapshot_relation esr\n            INNER JOIN execution e ON esr.execution_id = e.id\n            INNER JOIN snapshot s ON esr.snapshot_id = s.id\n            INNER JOIN package p ON s.package_id = p.id\n            WHERE p.id = p_package.id\n        )\n        SELECT commit_hash\n        FROM snapshot_last_action sla\n        WHERE sla.action = 'upgrade' AND rank = 1\n    ;\nEND;\n$$ LANGUAGE plpgsql STABLE STRICT;\n",
+                    "param_names": [
+                        "p_package"
+                    ],
+                    "param_types": [
+                        "package"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "get_applied_snapshots"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "register_migration_dependencies": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "migration, text[]": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION register_migration_dependencies (\n    p_migration migration, p_dependency_names text[]\n) RETURNS void AS $$\nBEGIN\n    INSERT INTO migration_dependency_relation (migration_id, depends_on_id)\n    SELECT p_migration.id, m.id\n    FROM migration m\n    WHERE m.name = ANY(p_dependency_names);\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "param_names": [
+                        "p_migration",
+                        "p_dependency_names"
+                    ],
+                    "param_types": [
+                        "migration",
+                        "text[]"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "register_migration_dependencies"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "set_package_integrity_hash": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "package, text": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION set_package_integrity_hash (\n    p_package package, p_integrity_hash text\n) RETURNS void AS $$\nBEGIN\n    UPDATE package SET integrity_hash = p_integrity_hash \n    WHERE id = p_package.id;\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "param_names": [
+                        "p_package",
+                        "p_integrity_hash"
+                    ],
+                    "param_types": [
+                        "package",
+                        "text"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "set_package_integrity_hash"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "register_execution_snapshot_relation": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "execution, snapshot, text": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION register_execution_snapshot_relation (\n    p_execution execution, p_snapshot snapshot, p_integrity_hash text\n) RETURNS void AS $$\nBEGIN\n    INSERT INTO execution_snapshot_relation(execution_id, snapshot_id, integrity_hash)\n    VALUES (p_execution.id, p_snapshot.id, p_integrity_hash);\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "param_names": [
+                        "p_execution",
+                        "p_snapshot",
+                        "p_integrity_hash"
+                    ],
+                    "param_types": [
+                        "execution",
+                        "snapshot",
+                        "text"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "register_execution_snapshot_relation"
+            },
+            "comment": null,
+            "kind": "function"
+        }
+    }
+}

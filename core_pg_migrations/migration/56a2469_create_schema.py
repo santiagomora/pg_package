@@ -1,6 +1,6 @@
-import core_pg_bindings.builder.schema as sb
-import core_pg_bindings.builder.role as rb
-from core_pg_bindings.builder.common import\
+import core_pg_migrations.builder.schema as sb
+import core_pg_migrations.builder.role as rb
+from core_pg_migrations.builder.common import\
     GeneratesSQLSentence
 from typing import\
     Generator,\
@@ -13,7 +13,6 @@ from typing import Any
 GENERATED_AT: str = '2024-12-23 17:50:07+00:00'
 DEPENDS_ON: list[str] = []
 DATAFIX_NAME: Optional[str] = None
-SNAPSHOT: str = '4d72aca8a7ebb5ea378335e26c5e9434492d8121'
 
 
 def upgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:

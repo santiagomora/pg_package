@@ -10,10 +10,10 @@ set(pybind11_DIR ${PYTHON_VENV_PATH}/lib/python${PYTHON_VERSION}/site-packages/p
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -fPIC -O2 -march=native -flto=auto -Wno-attributes -Wno-deprecated")
 find_package(pybind11 REQUIRED)
 pybind11_add_module(${PROJECT_NAME}
-    wrapper.cpp
-    src/interface.cpp
     src/util.cpp
-    src/backend.cpp)
+    src/backend.cpp
+    src/interface.cpp
+    wrapper.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ./include)
 target_include_directories(${PROJECT_NAME} PRIVATE ${SGS_INCLUDE_PATH})
 

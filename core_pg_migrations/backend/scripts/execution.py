@@ -3,14 +3,12 @@ import os
 import psycopg
 import core_pg_migrations
 import heapq
-from .config import\
-    ActionConfiguration
+from .environment import\
+    _ExecutionEnvironment
 from typing import\
     Optional,\
     Any
-from .check_install import\
-    check_core_pg_migrations_installed_correctly
-import core_pg_bindings.builder.schema as sb
+import core_pg_migrations.builder.schema as sb
 from .prompt import\
     prompt_error
 from core_pg_bindings import\
@@ -28,11 +26,12 @@ class ConsistencyException(Exception):
 
 class MigrationWrapper:
     def __init__(
-        self, module, config: ActionConfiguration
+        self, module, config: _ExecutionEnvironment, snapshot: str
     ) -> None:
         self.module = module
         self.last_executed_action: Optional[mgr.execution_action] = None
         self.config = config
+        self.snapshot = snapshot
         if module.DATAFIX_NAME is not None:
             with open(f'{config.DATAFIX_PATH}/{module.DATAFIX_NAME}.sql') as fns:
                 load_functions_from_file(
@@ -42,7 +41,8 @@ class MigrationWrapper:
     @property
     @functools.cache
     def NAME(self):
-        return self.module.__name__.split('.')[-1]
+        name: str = self.module.__name__.split('.')[-1]
+        return name.replace(f"{self.snapshot}_", "")
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.module, name)
@@ -59,12 +59,12 @@ class MigrationWrapper:
         errors: list[str] = []
         creating: list[str] = []
         opposite_script: mgr.execution_action.enum = self.config.opposite_action()
-        snapshot = self.config.get_snapshot(self.SNAPSHOT)
-        for c_sentence in self.upgrade(snapshot):
+        snapshot_payload = self.config.SCHEMA_DEFINITIONS
+        for c_sentence in self.upgrade(snapshot_payload):
             if isinstance(c_sentence, sb.Create):
                 creating.append(c_sentence.component.name)
             has_opposite: bool = False
-            for rb_sentence in self.downgrade(snapshot):
+            for rb_sentence in self.downgrade(snapshot_payload):
                 has_opposite = has_opposite or c_sentence.is_opposite(rb_sentence)
             if not has_opposite:
                 errors.append(f'"{c_sentence}" must have an opposite sentence in {opposite_script} script')
@@ -74,7 +74,7 @@ class MigrationWrapper:
 
 class ExecutionHeap(list[MigrationWrapper]):
     def __init__(
-        self, config: ActionConfiguration
+        self, config: _ExecutionEnvironment
     ) -> None:
         self.config = config
 
@@ -88,7 +88,7 @@ class ExecutionHeap(list[MigrationWrapper]):
             spacing = "  "*int(math.log(level, 2))
             extrapadding = "        "
             dependencies = f'{spacing}{extrapadding}'+f"\n{spacing}{extrapadding}".join(migration.DEPENDS_ON)
-            res += f'{spacing}*** NAME: {migration.NAME}\n{spacing}    DEPENDS_ON: [\n{dependencies}]\n{spacing}    SNAPSHOT: {migration.SNAPSHOT}\n\n'
+            res += f'{spacing}**** NAME: {migration.NAME}\n{spacing}    DEPENDS_ON: [\n{dependencies}]\n{spacing}    SNAPSHOT: {migration.snapshot}\n\n'
             if ctr % level == 0:
                 level *= 2
                 ctr = 0
@@ -99,20 +99,12 @@ class ExecutionHeap(list[MigrationWrapper]):
         return heapq.heappop(self)
 
     def get_migration(
-        self, module_name: str, with_last_execution: bool = False
+        self, module_name: str, snapshot: str
     ) -> MigrationWrapper:
-        module: MigrationWrapper = MigrationWrapper(
+        return MigrationWrapper(
             importlib.import_module(module_name, package=self.config.PACKAGE_NAME),
-            self.config
+            self.config, snapshot
         )
-        if with_last_execution:
-            with psycopg.connect(self.config.DB_DSN) as conn:
-                with conn.cursor() as cursor:
-                    if cursor is not None:
-                        module.last_executed_action = mgr.get_last_action(
-                            cursor, p_migration=mgr.get_migration_by_name(cursor, p_name=module.NAME)
-                        )
-        return module
 
     @staticmethod
     def unfold_dependencies(exec_heap: list[MigrationWrapper]) -> list[MigrationWrapper]:
@@ -138,33 +130,13 @@ class ExecutionHeap(list[MigrationWrapper]):
             setattr(exec_heap[ix], '_DEPENDS_ON', determine_dependencies(ix))
 
 
-
-def get_migration_execution_heap(
-    config: ActionConfiguration, name: Optional[str] = None
-) -> ExecutionHeap:
-    exec_heap: ExecutionHeap = ExecutionHeap(config)
-    check_core_pg_migrations_installed_correctly(config)
-    if name is None:
-        # get all migration modules and see their status in the database
-        for f in os.listdir(config.MIGRATION_PATH):
-            migrations.push(exec_heap.get_migration(f.split('.')[0]), True)
-    else:
-        # get single migration module and see its status in the database
-        # and the status of its dependencies
-        module = exec_heap.get_migration(f.split('.')[0], True)
-        migrations.push(module)
-        for dependency in module.DEPENDS_ON:
-            migrations.push(exec_heap.get_migration(dependency, True))
-    return exec_heap
-
-
-def get_migration_setup_heap(config: ActionConfiguration) -> ExecutionHeap:
+def get_execution_heap(config: _ExecutionEnvironment, snapshot: str) -> ExecutionHeap:
     exec_heap: ExecutionHeap = ExecutionHeap(config)
     # get all migration modules and see their status in the database
     for f in os.listdir(config.MIGRATION_PATH):
-        if f.startswith('__') or f == 'snapshots':
+        if not f.startswith(snapshot):
             continue
-        module = exec_heap.get_migration(f'{config.MIGRATION_SUBMODULE.__name__}.{f.split('.')[0]}')
+        module = exec_heap.get_migration(f'{config.MIGRATION_SUBMODULE.__name__}.{f.split('.')[0]}', snapshot)
         module.check_consistency()
         exec_heap.append(module)
     ExecutionHeap.unfold_dependencies(exec_heap)

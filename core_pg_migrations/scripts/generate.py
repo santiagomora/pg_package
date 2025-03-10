@@ -6,14 +6,14 @@ from datetime import datetime,\
     timezone
 from typing import\
     Optional
-from core_pg_migrations.backend.scripts.config import\
-    GenerateConfiguration
+from core_pg_migrations.backend.scripts.environment import\
+    GenerateEnvironment
 from core_pg_migrations.backend.scripts.prompt import\
     prompt_notice,\
     prompt_error
 
 
-CONFIG: Optional[GenerateConfiguration] = None
+CONFIG: Optional[GenerateEnvironment] = None
 
 
 def valid_package_submodule_name(name: str) -> str:
@@ -28,14 +28,13 @@ def create_migration_from_template(
         return None
 
     NAME: str = valid_package_submodule_name(config.migration)
-    FILENAME: str = f'{NAME}.py'
+    FILENAME: str = CONFIG.get_migration_filename(NAME)
 
     """
     The migration is presumed to apply changes on the extensions database objects, tables and
     so on. these changes must be reflected in the pg objects defined by the extension.
     """
-    if not os.path.exists(dest_path):
-        os.mkdir(dest_path)
+    os.makedirs(dest_path, exist_ok=True)
 
     PATH: str = f'{dest_path}/{FILENAME}'
 
@@ -44,7 +43,7 @@ def create_migration_from_template(
         return False
 
     core_pg_migrations_template: str = ''
-    with open(f'{template_path}/migration_body.tpl', 'r') as mgrtpl:
+    with open(f'{template_path}/migration_py_body.tpl', 'r') as mgrtpl:
         core_pg_migrations_template = mgrtpl.read()
 
     DEPENDS = []
@@ -65,7 +64,8 @@ def create_migration_from_template(
         generated_at: str = datetime.now(timezone.utc).isoformat(' ', 'seconds')
         mgrdest.write(core_pg_migrations_template.format(
             depends_on=DEPENDS, generated_at=f"'{generated_at}'",
-            datafix_name=f"'{datafix_name}'" if datafix_name is not None else None
+            datafix_name=f"'{datafix_name}'" if datafix_name is not None else None,
+            snapshot=f'"{CONFIG.COMMIT_HASH}"'
         ))
     prompt_notice(f'Migration "{NAME}" generated at path "{PATH}"')
     return NAME
@@ -81,10 +81,9 @@ def create_datafix_from_template(
     else:
         NAME: str = valid_package_submodule_name(config.datafix)
 
-    if not os.path.exists(dest_path):
-        os.mkdir(dest_path)
+    os.makedirs(dest_path, exist_ok=True)
 
-    FILENAME = f'{NAME}.sql'
+    FILENAME = CONFIG.get_datafix_filename(NAME)
     PATH: str = f'{dest_path}/{FILENAME}'
 
     if os.path.exists(PATH):
@@ -92,7 +91,7 @@ def create_datafix_from_template(
         return None
 
     df_template: str = ''
-    with open(f'{template_path}/datafix.tpl', 'r') as dftpl:
+    with open(f'{template_path}/datafix_body.tpl', 'r') as dftpl:
         df_template = dftpl.read()
 
     with open(PATH, 'w') as dfdest:
@@ -104,7 +103,7 @@ def create_datafix_from_template(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        prog='Migration Generator',
+        prog='Generate Migration',
         description='Generates database migrations for ordered database changes and datafixes',
         epilog='')
 
@@ -122,7 +121,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args(sys.argv[1:])
 
-    CONFIG = GenerateConfiguration(args.package, args)
+    CONFIG = GenerateEnvironment(args)
 
     # will have to look in the package installation directory to see these paths. Each extension package will have its own migration directory
     dfx_name: Optional[str] = create_datafix_from_template(

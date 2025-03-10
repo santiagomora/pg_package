@@ -1,5 +1,6 @@
 import core_pg_bindings as pg
 import core_pg_migrations.database.cpp.module.database_wrapper as pw
+from typing_extensions import Self
 
 
 class execution_id_seq(pg.sequence, base=pg.catalog.int8):
@@ -7,6 +8,10 @@ class execution_id_seq(pg.sequence, base=pg.catalog.int8):
 
 
 class package_id_seq(pg.sequence, base=pg.catalog.int8):
+    pass
+
+
+class snapshot_id_seq(pg.sequence, base=pg.catalog.int8):
     pass
 
 
@@ -27,6 +32,24 @@ class package(pw.package, metaclass=pg.table):
     pass
 
 
+@pg.table.foreign_key(
+    name='snapshot_package_id_fk', columns=('package_id',),
+    references=package, referenced_columns=('id',))
+@pg.table.foreign_key(
+    name='snapshot_parent_id_fk', columns=('parent_id',),
+    references=Self, referenced_columns=('id',))
+@pg.table.foreign_key(
+    name='snapshot_child_id_fk', columns=('child_id',),
+    references=Self, referenced_columns=('id',))
+@pg.table.unique_constraint(
+    name='snapshot_unique_commit_hash_constraint', columns=('package_id', 'commit_hash',))
+@pg.table.serial(column='id', sequence=snapshot_id_seq)
+@pg.table.primary_key(
+    name='snapshot_pk', columns=('id',))
+class snapshot(pw.snapshot, metaclass=pg.table):
+    pass
+
+
 @pg.table.primary_key(
     name='execution_pk', columns=('id',))
 @pg.table.foreign_key(
@@ -40,35 +63,44 @@ class execution(pw.execution, metaclass=pg.table):
 @pg.table.primary_key(
     name='migration_pk', columns=('id',))
 @pg.table.unique_constraint(
-    name='migration_unique_name_constraint', columns=('execution_id', 'name',))
+    name='migration_unique_name_constraint', columns=('snapshot_id', 'name',))
+@pg.table.unique_constraint(
+    name='migration_unique_datafix_name_constraint', columns=('snapshot_id', 'datafix_name',))
 @pg.table.foreign_key(
-    name='migration_package_id_fk', columns=('execution_id',),
-    references=execution, referenced_columns=('id',))
-# @pg.foreign_key( implement self class references
-#     name='migration_parent_id_fk', columns=('parent_id',),
-#     references=migration, referenced_columns=('id',))
+    name='migration_snapshot_id_fk', columns=('snapshot_id',),
+    references=snapshot, referenced_columns=('id',))
 @pg.table.serial(column='id', sequence=migration_id_seq)
 class migration(pw.migration, metaclass=pg.table):
     pass
 
 
 @pg.table.primary_key(
-    name='execution_migration_pk', columns=('execution_id', 'migration_id',))
+    name='migration_dependency_relation_pk', columns=('migration_id', 'depends_on_id', ))
 @pg.table.foreign_key(
-    name='execution_migration_execution_id_fk', columns=('execution_id',),
+    name='migration_dependency_relation_migration_id_fk', columns=('migration_id',),
+    references=migration, referenced_columns=('id',))
+@pg.table.foreign_key(
+    name='migration_dependency_relation_depends_on_id_fk', columns=('depends_on_id',),
+    references=migration, referenced_columns=('id',))
+class migration_dependency_relation(pw.migration_dependency_relation, metaclass=pg.table):
+    pass
+
+
+@pg.table.primary_key(
+    name='execution_snapshot_relation_pk', columns=('execution_id', 'snapshot_id', ))
+@pg.table.foreign_key(
+    name='execution_snapshot_relation_execution_id_fk', columns=('execution_id',),
     references=execution, referenced_columns=('id',))
 @pg.table.foreign_key(
-    name='execution_migration_migration_id_fk', columns=('migration_id',),
-    references=migration, referenced_columns=('id',))
-class execution_migration(pw.execution_migration, metaclass=pg.table):
+    name='execution_snapshot_relation_snapshot_id_fk', columns=('snapshot_id',),
+    references=snapshot, referenced_columns=('id',))
+@pg.table.unique_constraint(
+    name='execution_snapshot_relation_uix', columns=('execution_id', 'snapshot_id', 'integrity_hash'))
+class execution_snapshot_relation(pw.execution_snapshot_relation, metaclass=pg.table):
     pass
 
 
 class create_execution(pw.create_execution, metaclass=pg.function):
-    pass
-
-
-class register_execution_migration(pw.register_execution_migration, metaclass=pg.function):
     pass
 
 
@@ -78,4 +110,25 @@ class create_migration(pw.create_migration, metaclass=pg.function):
 
 class create_package(pw.create_package, metaclass=pg.function):
     pass
+
+
+class create_snapshot(pw.create_snapshot, metaclass=pg.function):
+    pass
+
+
+class get_applied_snapshots(pw.get_applied_snapshots, metaclass=pg.function):
+    pass
+
+
+class register_migration_dependencies(pw.register_migration_dependencies, metaclass=pg.function):
+    pass
+
+
+class set_package_integrity_hash(pw.set_package_integrity_hash, metaclass=pg.function):
+    pass
+
+
+class register_execution_snapshot_relation(pw.register_execution_snapshot_relation, metaclass=pg.function):
+    pass
+
 

@@ -1,6 +1,6 @@
-import core_pg_bindings.builder.schema as sb
-import core_pg_bindings.builder.role as rb
-from core_pg_bindings.builder.common import\
+import core_pg_migrations.builder.schema as sb
+import core_pg_migrations.builder.role as rb
+from core_pg_migrations.builder.common import\
     GeneratesSQLSentence
 from typing import\
     Generator,\

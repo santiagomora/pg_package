@@ -2,9 +2,15 @@ import core_types as ct
 import core_pg_migrations.backend.cpp.backend_wrapper as cw
 
 
-class SetupParameters(cw.setup_parameters, metaclass=ct.compound):
+class snapshot(cw.snapshot, metaclass=ct.compound):
     pass
 
 
-class MigrationParam(cw.migration_param, metaclass=ct.compound):
+class migration(cw.migration, metaclass=ct.compound):
     pass
+
+
+class package(cw.package, metaclass=ct.compound):
+    pass
+
+

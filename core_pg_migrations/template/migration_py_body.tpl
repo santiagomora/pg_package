@@ -1,7 +1,7 @@
-import core_pg_bindings.builder.schema as sb
-import core_pg_bindings.builder.role as rb
+import core_pg_migrations.builder.schema as sb
+import core_pg_migrations.builder.role as rb
 import core_types as ct
-from core_pg_bindings.builder.common import\
+from core_pg_migrations.builder.common import\
     GeneratesSQLSentence
 from typing import\
     Generator,\
@@ -14,7 +14,6 @@ from typing import\
 GENERATED_AT: str = {generated_at}
 DEPENDS_ON: list[str] = {depends_on}
 DATAFIX_NAME: Optional[str] = {datafix_name}
-SNAPSHOT: str = {snapshot}
 
 
 def upgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:

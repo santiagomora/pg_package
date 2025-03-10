@@ -20,11 +20,10 @@ namespace core_pg_migrations::util
 /*
  * NOTE PROMPT HELPERS
  */
-void prompt_notice(std::ostringstream&);
-void prompt_error(std::ostringstream&);
-std::string identifier (
-    const pqxx::work& tx, const std::string& name
-);
+void prompt_notice (std::ostringstream&);
+void prompt_error (std::ostringstream&);
+std::string identifier (const pqxx::work& tx, const std::string& name);
+std::string sha512(const std::string& data);
 }
 
 #endif

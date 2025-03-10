@@ -1,9 +1,8 @@
 [migration]
 migration_submodule = ".migration"
-database_dsn = "host=172.18.0.1 dbname=mutzhub port=5432 user=mutzhub password=WtbNMMpX46iynzjVobrh8Qu7omvFIL9JEvbkLYYCpCJNIwDWnBwcVquhk6vXe6En"
 var_directory = "./var"
 datafix_directory = "./datafix"
 tracked_branch = "trunk"
-search_path = ["core_pg_migrations"]
-procedure_schema = ".database.core_pg_execution_procedures"
+remote_name = "sgs"
+procedure_schema = ".database.core_pg_migration_execution_procedures"
 schema = ".database.core_pg_migrations"

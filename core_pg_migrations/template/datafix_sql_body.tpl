@@ -7,17 +7,8 @@
 -- migration file if it shares name with a migration.
 
 
-CREATE OR REPLACE FUNCTION core_pg_migrations_datafix_{datafix_name}_upgrade()
-RETURNS int8 AS $$
-BEGIN
-    -- your code here
-
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION core_pg_migrations_datafix_{datafix_name}_downgrade()
-RETURNS void AS $$
+CREATE PROCEDURE {datafix_upgrade_name}()
+AS $$
 BEGIN
     -- your code here
 

@@ -1,0 +1,1 @@
+rm -rf build/ core_pg_migrations.egg-info/ ../venv/lib/python3.12/sgs/libcore_pg_migrations.so ../venv/lib/python3.12/sgs/libcore_pg_migrations_db.so ../venv/include/python3.12/sgs/core_pg_migrations

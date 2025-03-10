@@ -1,28 +1,29 @@
 #ifndef CORE_PG_MIGRATIONS_BACKEND_NAMESPACE
 #define CORE_PG_MIGRATIONS_BACKEND_NAMESPACE
 #include "core_pg_migrations/backend/_definitions.hpp"
+#include "core_pg_migrations/database/namespace.hpp"
 
 
 namespace pg = core_pg_bindings;
+namespace cm_db = core_pg_migrations::database;
+
+
+ /* in this sense the snapshot can be represented as a std::map with keys:
+ * <snapshot>: next: str, previous: str, hash: str, migrations: std::vector<migration>
+ * <migration>: name: str, datafix_name: str, script: str, procedure_name: str, dependencies: std::vector<str>
+ * <package>: procedure_schema_name: str, schema_name: str, snapshots: std::vector<snapshot>*/
+namespace core_pg_migrations::backend
+{
+    CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_MIGRATION);
+    CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_SNAPSHOT);
+    CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_PACKAGE);
+}
 
 
 namespace core_pg_migrations::backend
 {
-/*
- * NOTE TYPES
- */
-CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BACKEND_MIGRATION_PARAM);
-CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BACKEND_SETUP_PARAMETERS);
-/*
- * NOTE FUNCTIONS
- */
-void create_and_execute_setup_script(
-    pqxx::work& p_tx, pg::text& p_proc_schema, pg::text& p_script_name,
-    pg::text& p_setup_script
-);
-void register_setup_package_and_execution(
-    pqxx::work& p_tx, pg::text& p_package_name, pg::text& p_tracked_branch,
-    std::vector<migration_param>& p_migrations
+void apply_package_snapshots_until_hash (
+    pqxx::connection& p_conn, const package& p_package, const pg::text& p_until_hash
 );
 }
 
