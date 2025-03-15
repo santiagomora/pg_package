@@ -1,4 +1,4 @@
-CREATE PROCEDURE {procedure_name} ()
+CREATE OR REPLACE PROCEDURE {procedure_name} ()
 AS $_mgr_$
 DECLARE
 v_error_message    text;

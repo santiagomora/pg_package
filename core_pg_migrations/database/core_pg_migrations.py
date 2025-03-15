@@ -65,6 +65,8 @@ class execution(pw.execution, metaclass=pg.table):
 @pg.table.unique_constraint(
     name='migration_unique_name_constraint', columns=('snapshot_id', 'name',))
 @pg.table.unique_constraint(
+    name='migration_unique_heap_position_constraint', columns=('snapshot_id', 'heap_position',))
+@pg.table.unique_constraint(
     name='migration_unique_datafix_name_constraint', columns=('snapshot_id', 'datafix_name',))
 @pg.table.foreign_key(
     name='migration_snapshot_id_fk', columns=('snapshot_id',),
@@ -120,7 +122,7 @@ class get_applied_snapshots(pw.get_applied_snapshots, metaclass=pg.function):
     pass
 
 
-class register_migration_dependencies(pw.register_migration_dependencies, metaclass=pg.function):
+class synchronize_migration_dependencies(pw.synchronize_migration_dependencies, metaclass=pg.function):
     pass
 
 
@@ -131,4 +133,19 @@ class set_package_integrity_hash(pw.set_package_integrity_hash, metaclass=pg.fun
 class register_execution_snapshot_relation(pw.register_execution_snapshot_relation, metaclass=pg.function):
     pass
 
+
+class keep_snapshot_migration_ids(pw.keep_snapshot_migration_ids, metaclass=pg.function):
+    pass
+
+
+class destroy_migration(pw.destroy_migration, metaclass=pg.function):
+    pass
+
+
+class get_integrity_hash(pw.get_integrity_hash, metaclass=pg.function):
+    pass
+
+
+class get_snapshot_migrations(pw.get_snapshot_migrations, metaclass=pg.function):
+    pass
 

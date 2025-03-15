@@ -10,10 +10,10 @@ import core_pg_migrations
 import core_pg_migrations.database.core_pg_migrations as mgr
 from core_pg_migrations.builder.common import schema_name
 from datetime import datetime, timezone
-from typing import Any
 import json
-from typing import Optional
+from typing import Optional, Generator, Any
 from .snapshot import SnapshotList
+from types import ModuleType
 
 
 class _ExecutionEnvironment:
@@ -151,72 +151,33 @@ class _ExecutionEnvironment:
         pass
 
 
-class UpgradeEnvironment(_ExecutionEnvironment):
+class _StateChangeEnvironment(_ExecutionEnvironment):
     def __init__(
-        self, package: str, args: argparse.Namespace, parent_environment: Optional['UpgradeEnvironment'] = None
+        self, package: str, args: argparse.Namespace, requested_snapshot: str,
+        parent_environment: Optional['UpgradeEnvironment'] = None,
     ) -> None:
         _ExecutionEnvironment.__init__(self, package, args)
-        self._requested_snapshot = args.snapshot if args.snapshot is not None else self.LAST_GENERATED_SNAPSHOT
+        self._requested_snapshot = requested_snapshot
         self.execution_action = mgr.execution_action.enum.upgrade
         self.parent_environment = parent_environment
-
-    def _determine_unapplied_snapshots(
-        self, applied_snapshots: list[str]
-    ) -> SnapshotList:
-        """
-        this operation consists of getting of the database the missing snapshots,
-        and checking if the snapshots in the folder are all applied. it does a consistency test too
-        """
-        snapshot_files = [c for c in self._snapshots]
-        ix = 0
-        snapshot_applied = False
-        while ix < len(applied_snapshots) and not snapshot_applied:
-            if snapshot_files[ix].commit_hash != applied_snapshots[ix]:
-                prompt_error(f'Consistency broken, please check that commit file order concurs with the one stored in database "{self.DSN}".')
-                exit(1)
-            if applied_snapshots[ix] == self._requested_snapshot:
-                snapshot_applied = True
-            ix += 1
-        if snapshot_applied:
-            prompt_notice(f"Snapshot \"{self._requested_snapshot}\" already applied on the database. Exiting...")
-            exit(0)
-        jx = ix
-        while jx < len(applied_snapshots):
-            if self._requested_snapshot == snapshot_files[ix].commit_hash:
-                break
-            jx += 1
-        return self._snapshots[ix:jx]
-
-    def opposite_action(self) -> mgr.execution_action.enum:
-        return mgr.execution_action.enum.downgrade
-
-    @staticmethod
-    def compare_migrations(mgr1: 'MigrationWrapper', mgr2: 'MigrationWrapper') -> bool:
-        return mgr2.NAME not in mgr1._DEPENDS_ON
 
     @property
     @functools.cache
     def GENERATED_SNAPSHOTS_LIST(self) -> SnapshotList:
         if self._snapshots is None:
-            self._obtain_snapshot_list_from_path(self.SNAPSHOT_PATH, self.SNAPSHOT_PARAM)
+            self._obtain_snapshot_list_from_path(self.SNAPSHOT_PATH, self._requested_snapshot)
         return self._snapshots
 
     @property
     @functools.cache
-    def SNAPSHOT(self) -> SnapshotList:
+    def SNAPSHOT(self) -> SnapshotList.Node:
         return self.LAST_GENERATED_SNAPSHOT if self.args.snapshot is None else self.args.snapshot
 
-    @property
-    def SCRIPT_NAME(self) -> str:
-        now: str = datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
-        return f'upgrade_{self.PACKAGE_NAME}_branch_{self.TRACKED_BRANCH}_at_{now}'
-
-    @property
-    @functools.cache
-    def PROCEDURE_SCHEMA(self) -> str:
-        return importlib.import_module(
-            self.config["migration"]["procedure_schema"], package=self.package.__name__
-        )
+    def get_migration_modules(self, snapshot: SnapshotList.Node) -> Generator[ModuleType, None, None]:
+        for f in os.listdir(self.MIGRATION_PATH):
+            if not f.startswith(snapshot.commit_hash):
+                continue
+            yield importlib.import_module(f'{self.MIGRATION_SUBMODULE.__name__}.{f.split('.')[0]}', package=self.PACKAGE_NAME)
 
     @property
     def DSN(self) -> str:
@@ -226,12 +187,11 @@ class UpgradeEnvironment(_ExecutionEnvironment):
             return self.config['migration']['dsn']
 
     @property
-    def SNAPSHOT_PARAM(self) -> str:
-        return self.args.snapshot
-
-    @property
-    def SCHEMA_DEFINITIONS(self) -> dict[str, Any]:
-        return {self.SCHEMA_NAME: self.LAST_GENERATED_SNAPSHOT.payload[self.SCHEMA_NAME]}
+    @functools.cache
+    def PROCEDURE_SCHEMA(self) -> str:
+        return importlib.import_module(
+            self.config["migration"]["procedure_schema"], package=self.package.__name__
+        )
 
     def get_migration_upgrade_sql_procedure_name(self, snapshot: str, migration_name: str) -> dict[str, Any]:
         return f'{self.PROCEDURE_SCHEMA_NAME}.upgrade_{snapshot}_{migration_name}'
@@ -240,35 +200,24 @@ class UpgradeEnvironment(_ExecutionEnvironment):
         return f'{self.PROCEDURE_SCHEMA_NAME}.downgrade_{snapshot}_{migration_name}'
 
 
-class DowngradeEnvironment(_ExecutionEnvironment):
+class UpgradeEnvironment(_StateChangeEnvironment):
     def __init__(
-        self, args: argparse.Namespace, dsn: str
+        self, package: str, args: argparse.Namespace, parent_environment: Optional['UpgradeEnvironment'] = None
     ) -> None:
-        _ExecutionEnvironment.__init__(self, args.package, args)
-        self.execution_action = mgr.execution_action.enum.downgrade
-        self._dsn = dsn
+        _StateChangeEnvironment.__init__(self, package, args, args.snapshot if args.snapshot is not None else self.LAST_GENERATED_SNAPSHOT, parent_environment)
+
+    def opposite_action(self) -> mgr.execution_action.enum:
+        return mgr.execution_action.enum.downgrade
+
+
+class DowngradeEnvironment(_StateChangeEnvironment):
+    def __init__(
+        self, package: str, args: argparse.Namespace, parent_environment: Optional['UpgradeEnvironment'] = None
+    ) -> None:
+        _StateChangeEnvironment.__init__(self, package, args, args.snapshot, parent_environment)
 
     def opposite_action(self) -> mgr.execution_action.enum:
         return mgr.execution_action.enum.upgrade
-
-    @staticmethod
-    def compare_migrations(mgr1: 'MigrationWrapper', mgr2: 'MigrationWrapper') -> bool:
-        return mgr2.NAME in mgr1._DEPENDS_ON
-
-    @property
-    def SCRIPT_NAME(self) -> str:
-        # TODO have to configure this to work with git commits
-        return f'{self.PACKAGE_NAME}_{self.TRACKED_BRANCH}_{self.COMMIT_HASH}_downgrade'
-
-    @property
-    @functools.cache
-    def PROCEDURE_SCHEMA(self) -> str:
-        return importlib.import_module(self.config["migration"]["procedure_schema"], package=self.package.__name__)
-
-    @property
-    @functools.cache
-    def DSN(self) -> str:
-        return self._dsn
 
 
 class SnapshotEnvironment(_ExecutionEnvironment):

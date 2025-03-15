@@ -78,6 +78,7 @@
     (core_pg_migrations::database, migration),\
     (PG_COLUMN(PG_INT8, id))\
     (PG_COLUMN(PG_INT8, snapshot_id))\
+    (PG_COLUMN(PG_INT8, heap_position))\
     (PG_COLUMN(PG_TEXT, name))\
     (PG_COLUMN(STD_OPTIONAL(PG_TEXT), datafix_name))\
     (PG_COLUMN(PG_TEXT, upgrade_script_name))\
@@ -131,9 +132,9 @@
 )
 
 
-#define CORE_PG_MIGRATIONS_DB_REGISTER_MIGRATION_DEPENDENCIES PG_INVOKABLE(\
-    CORE_PG_MIGRATIONS_DB_REGISTER_MIGRATION_DEPENDENCIES,\
-    (core_pg_migrations::database::functions, register_migration_dependencies)\
+#define CORE_PG_MIGRATIONS_DB_SYNCHRONIZE_MIGRATION_DEPENDENCIES PG_INVOKABLE(\
+    CORE_PG_MIGRATIONS_DB_SYNCHRONIZE_MIGRATION_DEPENDENCIES,\
+    (core_pg_migrations::database::functions, synchronize_migration_dependencies)\
 )
 
 
@@ -154,5 +155,22 @@
     (core_pg_migrations::database::functions, get_integrity_hash)\
 )
 
+
+#define CORE_PG_MIGRATIONS_DB_KEEP_SNAPSHOT_MIGRATION_IDS PG_INVOKABLE(\
+    CORE_PG_MIGRATIONS_DB_KEEP_SNAPSHOT_MIGRATION_IDS,\
+    (core_pg_migrations::database::functions, keep_snapshot_migration_ids)\
+)
+
+
+#define CORE_PG_MIGRATIONS_DB_DESTROY_MIGRATION PG_INVOKABLE(\
+    CORE_PG_MIGRATIONS_DB_DESTROY_MIGRATION,\
+    (core_pg_migrations::database::functions, destroy_migration)\
+)
+
+
+#define CORE_PG_MIGRATIONS_DB_GET_SNAPSHOT_MIGRATIONS PG_INVOKABLE(\
+    CORE_PG_MIGRATIONS_DB_GET_SNAPSHOT_MIGRATIONS,\
+    (core_pg_migrations::database::functions, get_snapshot_migrations)\
+)
 
 #endif

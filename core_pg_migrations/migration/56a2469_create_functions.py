@@ -17,27 +17,37 @@ DATAFIX_NAME: Optional[str] = None
 
 def upgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
     yield from sb.builder(snapshot)\
-        .function('create_migration').create('snapshot, text, text, text, text')\
+        .function('create_migration').create('snapshot, text, text, text, text, int8')\
         .function('create_package').create('text, text, text, text, text')\
         .function('create_snapshot').create('package, text, snapshot, snapshot')\
         .function('create_snapshot').create('int8, text, text, text')\
         .function('get_applied_snapshots').create('text')\
         .function('get_applied_snapshots').create('package')\
         .function('create_execution').create('package, execution_action')\
-        .function('register_migration_dependencies').create('migration, text[]')\
+        .function('synchronize_migration_dependencies').create('migration, text[]')\
         .function('set_package_integrity_hash').create('package, text')\
-        .function('register_execution_snapshot_relation').create('execution, snapshot, text')
+        .function('register_execution_snapshot_relation').create('execution, snapshot, text')\
+        .function('keep_snapshot_migration_ids').create('snapshot, int8[]')\
+        .function('destroy_migration').create('migration')\
+        .function('get_integrity_hash').create('text')\
+        .function('get_integrity_hash').create('package')\
+        .function('get_snapshot_migrations').create('snapshot, execution_action')
 
 
 def downgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
     yield from sb.builder(snapshot)\
-        .function('register_migration_dependencies').drop('migration, text[]')\
-        .function('set_package_integrity_hash').drop('package, text')\
+        .function('get_integrity_hash').drop('package')\
+        .function('get_integrity_hash').drop('text')\
+        .function('destroy_migration').drop('migration')\
+        .function('keep_snapshot_migration_ids').drop('snapshot, int8[]')\
         .function('register_execution_snapshot_relation').drop('execution, snapshot, text')\
-        .function('create_migration').drop('snapshot, text, text, text, text')\
-        .function('create_package').drop('text, text, text, text, text')\
-        .function('create_snapshot').drop('package, text, snapshot, snapshot')\
-        .function('create_snapshot').drop('int8, text, text, text')\
-        .function('get_applied_snapshots').drop('text')\
+        .function('set_package_integrity_hash').drop('package, text')\
+        .function('synchronize_migration_dependencies').drop('migration, text[]')\
+        .function('create_execution').drop('package, execution_action')\
         .function('get_applied_snapshots').drop('package')\
-        .function('create_execution').drop('package, execution_action')
+        .function('get_applied_snapshots').drop('text')\
+        .function('create_snapshot').drop('int8, text, text, text')\
+        .function('create_snapshot').drop('package, text, snapshot, snapshot')\
+        .function('create_package').drop('text, text, text, text, text')\
+        .function('create_migration').drop('snapshot, text, text, text, text, int8')\
+        .function('get_snapshot_migrations').drop('snapshot, execution_action')

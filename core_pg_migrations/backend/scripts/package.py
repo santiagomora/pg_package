@@ -1,6 +1,6 @@
 from typing import Any
 from core_pg_migrations.backend import package, migration, snapshot
-from .environment import UpgradeEnvironment
+from .environment import UpgradeEnvironment, DowngradeEnvironment
 from .snapshot import SnapshotList
 from .execution import ExecutionHeap
 import core_pg_migrations.backend.cpp.backend_wrapper as cmbw
@@ -21,10 +21,13 @@ def get_migration_upgrade_script(
     try:
         for sentence in migration.upgrade(snapshot.payload_data):
             sql_sentence, identifiers, params = sentence.sql_sentence_params()
-            queries.append(cursor.mogrify(
-                psycopg.sql.SQL(sql_sentence).format(*identifiers).as_string(cursor.connection),
-                params
-            ))
+            sql_sentence = psycopg.sql.SQL(sql_sentence)
+            if len(identifiers) > 0:
+                sql_sentence = sql_sentence.format(*identifiers)
+            if len(params) > 0:
+                queries.append(cursor.mogrify(sql_sentence.as_string(cursor.connection), params))
+            else:
+                queries.append(cursor.mogrify(sql_sentence.as_string(cursor.connection)))
         script: str = config.fill_template(
             template_name='migration_sql_body', name=migration.NAME, search_path=config.SEARCH_PATH,
             script=f'{"\n".join(queries)}', procedure_name=procedure_name,
@@ -32,7 +35,7 @@ def get_migration_upgrade_script(
         )
         return script, procedure_name
     except psycopg.Error as e:
-        prompt_error(f"Migration \"{migration.NAME}\" upgrade script  error: {e}")
+        prompt_error(f"Migration \"{migration.NAME}\" upgrade script  error: {e}", e)
         exit(1)
 
 
@@ -64,7 +67,7 @@ def get_migration_downgrade_script(
 def get_snapshot_migrations(
     config: UpgradeEnvironment, snapshot: SnapshotList.Node
 ) -> list[migration]:
-    execution_heap: ExecutionHeap = get_execution_heap(config, snapshot.commit_hash)
+    execution_heap: ExecutionHeap = get_execution_heap(config, snapshot)
     res: list[migration] = []
     with psycopg.connect(config.DSN) as connection:
         with psycopg.ClientCursor(connection) as cursor:
@@ -108,7 +111,25 @@ def get_current_state(config: UpgradeEnvironment) -> tuple[package, pg.int8]:
     return current_packate_state
 
 
-def apply_package_snapshots_until_hash(
-    config: UpgradeEnvironment, _package: package, starting_at: pg.int8
+def upgrade_to_package_snapshot_hash(
+    config: UpgradeEnvironment, _package: package, starting_at: str
 ) -> None:
-    cmbw.apply_package_snapshots_until_hash(config.DSN, _package, starting_at)
+    cmbw.upgrade_to_package_snapshot_hash(config.DSN, _package, starting_at)
+
+
+def get_unapplied_package_snapshots_for_upgrade_dry_run(
+    config: UpgradeEnvironment, _package: package, starting_at: str
+) -> list[snapshot]:
+    return cmbw.get_unapplied_package_snapshots_for_upgrade_dry_run(config.DSN, _package, starting_at)
+
+
+def downgrade_to_package_snapshot_hash(
+    config: DowngradeEnvironment, _package: package, ending_at: str
+) -> None:
+    cmbw.downgrade_to_package_snapshot_hash(config.DSN, _package, ending_at)
+
+
+def get_applied_package_snapshots_for_downgrade_dry_run(
+    config: DowngradeEnvironment, _package: package, ending_at: str
+) -> list[snapshot]:
+    return cmbw.get_applied_package_snapshots_for_downgrade_dry_run(config.DSN, _package, ending_at)

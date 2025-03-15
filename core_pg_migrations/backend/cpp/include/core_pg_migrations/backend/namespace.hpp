@@ -2,16 +2,15 @@
 #define CORE_PG_MIGRATIONS_BACKEND_NAMESPACE
 #include "core_pg_migrations/backend/_definitions.hpp"
 #include "core_pg_migrations/database/namespace.hpp"
+#include "core_pg_migrations/util.hpp"
 
 
+namespace py = pybind11;
 namespace pg = core_pg_bindings;
+namespace ct = core_types;
 namespace cm_db = core_pg_migrations::database;
 
 
- /* in this sense the snapshot can be represented as a std::map with keys:
- * <snapshot>: next: str, previous: str, hash: str, migrations: std::vector<migration>
- * <migration>: name: str, datafix_name: str, script: str, procedure_name: str, dependencies: std::vector<str>
- * <package>: procedure_schema_name: str, schema_name: str, snapshots: std::vector<snapshot>*/
 namespace core_pg_migrations::backend
 {
     CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_MIGRATION);
@@ -22,9 +21,24 @@ namespace core_pg_migrations::backend
 
 namespace core_pg_migrations::backend
 {
-void apply_package_snapshots_until_hash (
-    pqxx::connection& p_conn, const package& p_package, const pg::text& p_until_hash
+void set_search_path_for_package(
+    pqxx::work& p_tx, const package& p_package
+);
+void upgrade_to_package_snapshot_hash (
+    pqxx::work& p_tx, const package& p_package, const pg::text& p_hash
+);
+void downgrade_to_package_snapshot_hash (
+    pqxx::work& p_tx, const package& p_package, const pg::text& p_hash
+);
+std::tuple<std::deque<snapshot>, std::deque<snapshot>> get_applied_and_unapplied_package_snapshots (
+    pqxx::work& p_tx, const package& p_package, const pg::text& p_until_hash
+);
+std::tuple<std::deque<snapshot>, std::deque<snapshot>> get_request_snapshot_list (
+    pqxx::work& p_tx, const package& p_package, const std::string& p_hash,
+    const cm_db::execution_action& p_action, const bool&& p_check_db_integrity
 );
 }
+
+namespace cm_bk = core_pg_migrations::backend;
 
 #endif

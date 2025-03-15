@@ -3,10 +3,6 @@
 #include "core_pg_migrations/backend/namespace.hpp"
 
 
-namespace pg = core_pg_bindings;
-namespace ct_i = core_types;
-
-
 namespace core_pg_migrations::backend::interface
 {
     IFACE_CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_MIGRATION);
@@ -17,9 +13,22 @@ namespace core_pg_migrations::backend::interface
 
 namespace core_pg_migrations::backend::interface
 {
-void apply_package_snapshots_until_hash (
-    const pg::text& p_dsn, const package& p_package, const pg::text& p_until_hash
+void upgrade_to_package_snapshot_hash (
+    const pg::text& p_dsn, const package& p_package, const pg::text& p_hash
+);
+void downgrade_to_package_snapshot_hash (
+    const pg::text& p_dsn, const package& p_package, const pg::text& p_hash
+);
+std::deque<snapshot> get_unapplied_package_snapshots_for_upgrade_dry_run (
+    const pg::text& p_dsn, const package& p_package, const pg::text& p_hash
+);
+std::deque<snapshot> get_applied_package_snapshots_for_downgrade_dry_run (
+    const pg::text& p_dsn, const package& p_package, const pg::text& p_hash
 );
 }
+
+
+namespace cm_bk_i = core_pg_migrations::backend::interface;
+namespace ct_i = core_types::interface;
 
 #endif

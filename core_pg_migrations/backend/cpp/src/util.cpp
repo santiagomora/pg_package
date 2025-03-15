@@ -15,7 +15,7 @@ void prompt_error (
     std::ostringstream& p_stream
 ) {
     ct::timestamptz v_now = ct::utcnow();
-    std::cout << "[ERROR - " << ct::tp_to_string(v_now, "%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
+    std::cout << "[ERROR - " << ct::to_str(v_now, "%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
     p_stream.str("");
     p_stream.clear();
     p_stream.seekp(0);
@@ -26,7 +26,7 @@ void prompt_notice (
     std::ostringstream& p_stream
 ) {
     ct::timestamptz v_now = ct::utcnow();
-    std::cout << "[NOTICE - " << ct::tp_to_string(v_now, "%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
+    std::cout << "[NOTICE - " << ct::to_str(v_now, "%Y-%m-%dT%H:%M:%S") << "] " << p_stream.str() << std::endl;
     p_stream.str("");
     p_stream.clear();
     p_stream.seekp(0);

@@ -4,17 +4,17 @@ import psycopg
 import core_pg_migrations
 import heapq
 from .environment import\
-    _ExecutionEnvironment
+    UpgradeEnvironment
 from typing import\
     Optional,\
     Any
 import core_pg_migrations.builder.schema as sb
 from .prompt import\
     prompt_error
-from core_pg_bindings import\
-    load_functions_from_file
 import math
 import functools
+from .snapshot import SnapshotList
+from types import ModuleType
 
 
 mgr = core_pg_migrations.database.core_pg_migrations
@@ -24,31 +24,39 @@ class ConsistencyException(Exception):
     pass
 
 
+class DatafixWrapper:
+    def __init__(self, definition: str) -> None:
+        self._definition = definition
+
+
 class MigrationWrapper:
     def __init__(
-        self, module, config: _ExecutionEnvironment, snapshot: str
+        self, module, config: UpgradeEnvironment, snapshot: SnapshotList.Node
     ) -> None:
         self.module = module
         self.last_executed_action: Optional[mgr.execution_action] = None
         self.config = config
         self.snapshot = snapshot
-        if module.DATAFIX_NAME is not None:
-            with open(f'{config.DATAFIX_PATH}/{module.DATAFIX_NAME}.sql') as fns:
-                load_functions_from_file(
-                    self.datafix_functions, fns, config.DATAFIX_TMP_SCHEMA, None
-                )
+        self.datafix = None
+        # FIXME think of datafix logic
+        # if module.DATAFIX_NAME is not None:
+        #     with open(f'{config.DATAFIX_PATH}/{module.DATAFIX_NAME}.sql') as fns:
+        #         load_functions_from_file(
+        #             self.datafix_functions, fns, config.DATAFIX_TMP_SCHEMA, None
+        #         )
+        #         self.datafix = 
 
     @property
     @functools.cache
     def NAME(self):
         name: str = self.module.__name__.split('.')[-1]
-        return name.replace(f"{self.snapshot}_", "")
+        return name.replace(f"{self.snapshot.commit_hash}_", "")
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.module, name)
 
     def __lt__(self, other: 'MigrationWrapper') -> bool:
-        return self.config.compare_migrations(self, other)
+        return other.NAME not in self._DEPENDS_ON
 
     def check_consistency(self):
         '''
@@ -59,12 +67,11 @@ class MigrationWrapper:
         errors: list[str] = []
         creating: list[str] = []
         opposite_script: mgr.execution_action.enum = self.config.opposite_action()
-        snapshot_payload = self.config.SCHEMA_DEFINITIONS
-        for c_sentence in self.upgrade(snapshot_payload):
+        for c_sentence in self.upgrade(self.snapshot.payload_data):
             if isinstance(c_sentence, sb.Create):
                 creating.append(c_sentence.component.name)
             has_opposite: bool = False
-            for rb_sentence in self.downgrade(snapshot_payload):
+            for rb_sentence in self.downgrade(self.snapshot.payload_data):
                 has_opposite = has_opposite or c_sentence.is_opposite(rb_sentence)
             if not has_opposite:
                 errors.append(f'"{c_sentence}" must have an opposite sentence in {opposite_script} script')
@@ -74,7 +81,7 @@ class MigrationWrapper:
 
 class ExecutionHeap(list[MigrationWrapper]):
     def __init__(
-        self, config: _ExecutionEnvironment
+        self, config: UpgradeEnvironment
     ) -> None:
         self.config = config
 
@@ -97,14 +104,6 @@ class ExecutionHeap(list[MigrationWrapper]):
 
     def pop(self) -> MigrationWrapper:
         return heapq.heappop(self)
-
-    def get_migration(
-        self, module_name: str, snapshot: str
-    ) -> MigrationWrapper:
-        return MigrationWrapper(
-            importlib.import_module(module_name, package=self.config.PACKAGE_NAME),
-            self.config, snapshot
-        )
 
     @staticmethod
     def unfold_dependencies(exec_heap: list[MigrationWrapper]) -> list[MigrationWrapper]:
@@ -130,15 +129,14 @@ class ExecutionHeap(list[MigrationWrapper]):
             setattr(exec_heap[ix], '_DEPENDS_ON', determine_dependencies(ix))
 
 
-def get_execution_heap(config: _ExecutionEnvironment, snapshot: str) -> ExecutionHeap:
+def get_execution_heap(
+    config: UpgradeEnvironment, snapshot: SnapshotList.Node
+) -> ExecutionHeap:
     exec_heap: ExecutionHeap = ExecutionHeap(config)
-    # get all migration modules and see their status in the database
-    for f in os.listdir(config.MIGRATION_PATH):
-        if not f.startswith(snapshot):
-            continue
-        module = exec_heap.get_migration(f'{config.MIGRATION_SUBMODULE.__name__}.{f.split('.')[0]}', snapshot)
-        module.check_consistency()
-        exec_heap.append(module)
+    for module in config.get_migration_modules(snapshot):
+        wrapper = MigrationWrapper(module, config, snapshot)
+        wrapper.check_consistency()
+        exec_heap.append(wrapper)
     ExecutionHeap.unfold_dependencies(exec_heap)
     heapq.heapify(exec_heap)
     return exec_heap

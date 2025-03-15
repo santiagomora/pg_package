@@ -26,4 +26,9 @@ std::string identifier (const pqxx::work& tx, const std::string& name);
 std::string sha512(const std::string& data);
 }
 
+
+namespace cm_u = core_pg_migrations::util;
+namespace cm_u_i = core_pg_migrations::util::interface;
+
+
 #endif

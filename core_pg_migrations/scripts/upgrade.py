@@ -1,10 +1,10 @@
 import core_pg_migrations.backend.scripts as cm
 import argparse
 import sys
-from core_pg_migrations.backend.scripts.package import get_current_state, snapshot, migration, apply_package_snapshots_until_hash
+from core_pg_migrations.backend.scripts.package import get_current_state, snapshot, migration, upgrade_to_package_snapshot_hash, get_unapplied_package_snapshots_for_upgrade_dry_run
 
 
-def apply_package_snapshots_until_hash_dry_run(_snapshot: snapshot) -> None:
+def upgrade_to_package_snapshot_hash_dry_run(_snapshot: snapshot) -> None:
     cm.prompt_notice(f'SNAPSHOT "{_snapshot.hash}" DRY RUN. SHOWING MIGRATIONS...')
     for m in _snapshot.migrations:
         cm.prompt_notice(f"""
@@ -26,16 +26,16 @@ def run(
         migrations_config = cm.UpgradeEnvironment("core_pg_migrations", script_arguments, package_config)
         check_core_pg_migrations_is_up_to_date(migrations_config)
         config = package_config
-    current_packate_state = get_current_state(config)
+    current_package_state = get_current_state(config)
     if config.DRY_RUN:
         cm.prompt_notice(f"""
 UPGRADE MIGRATION SCRIPT DRY RUN:
 PACKAGE:\t{config.PACKAGE_NAME} 
 CONNECTION:\t{config.DSN}""")
-        # for _snapshot in current_packate_state.snapshots[unapplied_begins_at:]:
-        #     apply_package_snapshots_until_hash_dry_run(_snapshot)
+        for _snapshot in get_unapplied_package_snapshots_for_upgrade_dry_run(config, current_package_state, config.SNAPSHOT):
+            upgrade_to_package_snapshot_hash_dry_run(_snapshot)
     else:
-        apply_package_snapshots_until_hash(config, current_packate_state, config.SNAPSHOT)
+        upgrade_to_package_snapshot_hash(config, current_package_state, config.SNAPSHOT)
 
 
 if __name__ == '__main__':

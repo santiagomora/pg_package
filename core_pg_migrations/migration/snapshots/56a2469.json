@@ -434,6 +434,16 @@
                     "comment": null,
                     "check": null
                 },
+                "heap_position": {
+                    "name": "heap_position",
+                    "required": true,
+                    "type": {
+                        "schema": "pg_catalog",
+                        "type": "int8"
+                    },
+                    "comment": null,
+                    "check": null
+                },
                 "name": {
                     "name": "name",
                     "required": true,
@@ -505,6 +515,13 @@
                     "columns": [
                         "snapshot_id",
                         "datafix_name"
+                    ]
+                },
+                "migration_unique_heap_position_constraint": {
+                    "name": "migration_unique_heap_position_constraint",
+                    "columns": [
+                        "snapshot_id",
+                        "heap_position"
                     ]
                 },
                 "migration_unique_name_constraint": {
@@ -687,7 +704,7 @@
             "schema": "core_pg_migrations",
             "overloads": {
                 "package, execution_action": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION create_execution (\n    p_package package, p_action execution_action\n) RETURNS execution AS $$\nDECLARE \n    v_execution execution;\nBEGIN\n    INSERT INTO execution(package_id, created_at, action)\n    VALUES (p_package.id, now(), p_action)\n    RETURNING * INTO v_execution;\n    RETURN v_execution;\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_execution (\n    p_package package, p_action execution_action\n) RETURNS execution AS $$\nDECLARE\n    v_execution execution;\nBEGIN\n    INSERT INTO execution(package_id, created_at, action)\n    VALUES (p_package.id, now(), p_action)\n    RETURNING * INTO v_execution;\n    RETURN v_execution;\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
                     "param_names": [
                         "p_package",
                         "p_action"
@@ -708,21 +725,23 @@
         "create_migration": {
             "schema": "core_pg_migrations",
             "overloads": {
-                "snapshot, text, text, text, text": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION create_migration (\n    p_snapshot snapshot, p_name text, p_upgrade_procedure_name text,\n    p_downgrade_procedure_name text, p_datafix_name text = NULL\n) RETURNS migration AS $$\nDECLARE \n    v_migration migration;\nBEGIN\n    INSERT INTO migration(name, upgrade_script_name, downgrade_script_name, datafix_name, snapshot_id)\n    VALUES (p_name, p_upgrade_procedure_name, p_downgrade_procedure_name, p_datafix_name, p_snapshot.id)\n    RETURNING * INTO v_migration;\n    RETURN v_migration;\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
+                "snapshot, text, text, text, text, int8": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_migration (\n    p_snapshot snapshot, p_name text, p_upgrade_procedure_name text,\n    p_downgrade_procedure_name text, p_datafix_name text, p_heap_position int8\n) RETURNS migration AS $$\nDECLARE\n    v_migration       migration;\n    v_procedure_names text[];\nBEGIN\n    v_procedure_names := ARRAY[p_upgrade_procedure_name, p_downgrade_procedure_name];\n    IF p_datafix_name IS NOT NULL THEN\n        v_procedure_names := v_procedure_names || p_datafix_name;\n    END IF;\n    IF EXISTS (\n        SELECT 1 FROM unnest(v_procedure_names) req\n        LEFT JOIN pg_catalog.pg_proc fn\n        ON fn.pronamespace || '.' || fn.proname = req\n        WHERE fn.proname = NULL\n    ) THEN\n        RAISE EXCEPTION 'Cant create migration \"%\" because one or more procedures are missing: \"%\"', p_name, array_to_string(v_procedure_names, ', ');\n    END IF;\n    INSERT INTO migration(name, upgrade_script_name, downgrade_script_name, datafix_name, snapshot_id, heap_position)\n    VALUES (p_name, p_upgrade_procedure_name, p_downgrade_procedure_name, p_datafix_name, p_snapshot.id, p_heap_position)\n    ON CONFLICT (snapshot_id, name) DO UPDATE\n        SET upgrade_script_name = EXCLUDED.upgrade_script_name,\n            downgrade_script_name = EXCLUDED.downgrade_script_name,\n            datafix_name = EXCLUDED.datafix_name,\n            heap_position = EXCLUDED.heap_position\n    RETURNING * INTO v_migration;\n    RETURN v_migration;\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
                     "param_names": [
                         "p_snapshot",
                         "p_name",
                         "p_upgrade_procedure_name",
                         "p_downgrade_procedure_name",
-                        "p_datafix_name"
+                        "p_datafix_name",
+                        "p_heap_position"
                     ],
                     "param_types": [
                         "snapshot",
                         "text",
                         "text",
                         "text",
-                        "text"
+                        "text",
+                        "int8"
                     ]
                 }
             },
@@ -737,7 +756,7 @@
             "schema": "core_pg_migrations",
             "overloads": {
                 "text, text, text, text, text": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION create_package (\n    p_name text, p_remote_name text, p_tracked_branch_name text,\n    p_schema_name text, p_procedure_schema_name text\n) RETURNS package AS $$\nDECLARE \n    v_package package;\nBEGIN\n    INSERT INTO package(name, remote_name, tracked_branch_name, schema_name, procedure_schema_name)\n    VALUES (p_name, p_remote_name, p_tracked_branch_name, p_schema_name, p_procedure_schema_name)\n    RETURNING * INTO v_package;\n    RETURN v_package;\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_package (\n    p_name text, p_remote_name text, p_tracked_branch_name text,\n    p_schema_name text, p_procedure_schema_name text\n) RETURNS package AS $$\nDECLARE \n    v_package package;\nBEGIN\n    INSERT INTO package(name, remote_name, tracked_branch_name, schema_name, procedure_schema_name)\n    VALUES (p_name, p_remote_name, p_tracked_branch_name, p_schema_name, p_procedure_schema_name)\n    ON CONFLICT (name) DO UPDATE\n        SET remote_name = EXCLUDED.remote_name,\n            tracked_branch_name = EXCLUDED.tracked_branch_name,\n            schema_name = EXCLUDED.schema_name,\n            procedure_schema_name = EXCLUDED.procedure_schema_name\n    RETURNING * INTO v_package;\n    RETURN v_package;\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
                     "param_names": [
                         "p_name",
                         "p_remote_name",
@@ -765,7 +784,7 @@
             "schema": "core_pg_migrations",
             "overloads": {
                 "int8, text, text, text": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION create_snapshot (\n    p_package_id int8, p_hash text,\n    p_parent_hash text = NULL, p_child_hash text = NULL\n) RETURNS snapshot AS $$\nDECLARE\n    v_snapshot snapshot;\n    v_package package;\n    v_child_snapshot snapshot;\n    v_parent_snapshot snapshot;\nBEGIN\n    SELECT * FROM package p\n        INTO v_package\n        WHERE id = p_package_id\n    ;\n    SELECT * FROM snapshot s\n        INTO v_parent_snapshot\n        WHERE commit_hash = p_parent_hash\n    ;\n    SELECT * FROM snapshot s\n        INTO v_child_snapshot\n        WHERE commit_hash = p_child_hash\n    ;\n    RETURN create_snapshot(v_package, p_hash, v_parent_snapshot, v_child_snapshot);\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_snapshot (\n    p_package_id int8, p_hash text, p_parent_hash text = NULL, p_child_hash text = NULL\n) RETURNS snapshot AS $$\nDECLARE\n    v_snapshot snapshot;\n    v_package package;\n    v_child_snapshot snapshot;\n    v_parent_snapshot snapshot;\nBEGIN\n    SELECT * FROM package p\n        INTO v_package\n        WHERE id = p_package_id\n    ;\n    SELECT * FROM snapshot s\n        INTO v_parent_snapshot\n        WHERE commit_hash = p_parent_hash\n    ;\n    SELECT * FROM snapshot s\n        INTO v_child_snapshot\n        WHERE commit_hash = p_child_hash\n    ;\n    RETURN create_snapshot(v_package, p_hash, v_parent_snapshot, v_child_snapshot);\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
                     "param_names": [
                         "p_package_id",
                         "p_hash",
@@ -780,7 +799,7 @@
                     ]
                 },
                 "package, text, snapshot, snapshot": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION create_snapshot (\n    p_package package, p_hash text,\n    p_parent snapshot, p_child snapshot\n) RETURNS snapshot AS $$\nDECLARE\n    v_snapshot snapshot;\nBEGIN\n    INSERT INTO snapshot(package_id, commit_hash, child_id, parent_id, created_at)\n    VALUES (p_package.id, p_hash, id(p_child), id(p_parent), now())\n    RETURNING * INTO v_snapshot;\n    RETURN v_snapshot;\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
+                    "overload": "\nCREATE OR REPLACE FUNCTION create_snapshot (\n    p_package package, p_hash text, p_parent snapshot, p_child snapshot\n) RETURNS snapshot AS $$\nDECLARE\n    v_snapshot snapshot;\nBEGIN\n    INSERT INTO snapshot (package_id, commit_hash, child_id, parent_id, created_at)\n    VALUES (p_package.id, p_hash, id(p_child), id(p_parent), now())\n    ON CONFLICT (package_id, commit_hash) DO UPDATE\n        SET child_id = EXCLUDED.child_id,\n            parent_id = EXCLUDED.parent_id\n    RETURNING * INTO v_snapshot;\n    RETURN v_snapshot;\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
                     "param_names": [
                         "p_package",
                         "p_hash",
@@ -815,7 +834,7 @@
                     ]
                 },
                 "package": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION get_applied_snapshots (\n    p_package package\n) RETURNS SETOF text AS $$\nBEGIN\n    RETURN QUERY\n        WITH snapshot_last_action AS (\n            SELECT\n                s.commit_hash, e.action,\n                ROW_NUMBER() OVER(PARTITION BY s.id ORDER BY e.created_at DESC) AS rank\n            FROM execution_snapshot_relation esr\n            INNER JOIN execution e ON esr.execution_id = e.id\n            INNER JOIN snapshot s ON esr.snapshot_id = s.id\n            INNER JOIN package p ON s.package_id = p.id\n            WHERE p.id = p_package.id\n        )\n        SELECT commit_hash\n        FROM snapshot_last_action sla\n        WHERE sla.action = 'upgrade' AND rank = 1\n    ;\nEND;\n$$ LANGUAGE plpgsql STABLE STRICT;\n",
+                    "overload": "\nCREATE OR REPLACE FUNCTION get_applied_snapshots (\n    p_package package\n) RETURNS SETOF text AS $$\nDECLARE\n    v_snapshot_commit_hash text;\n    v_applied_snapshot_ids int8[];\n    v_snapshot snapshot;\nBEGIN\n    v_applied_snapshot_ids := ARRAY(\n        WITH snapshot_last_action AS (\n            SELECT\n                s.id, e.action,\n                ROW_NUMBER() OVER(PARTITION BY s.id ORDER BY e.created_at DESC) AS rank\n            FROM execution_snapshot_relation esr\n            INNER JOIN execution e ON esr.execution_id = e.id\n            INNER JOIN snapshot s ON esr.snapshot_id = s.id\n            INNER JOIN package p ON e.package_id = p.id\n            WHERE p.id = p_package.id\n        )\n        SELECT id\n        FROM snapshot_last_action sla\n        WHERE sla.action = 'upgrade' AND rank = 1\n    );\n    IF array_length(v_applied_snapshot_ids, 1) <= 0 THEN\n        RETURN;\n    END IF;\n    SELECT * FROM snapshot\n    INTO v_snapshot\n    WHERE parent_id IS NULL AND id = ANY(v_applied_snapshot_ids);\n    raise notice '%', v_snapshot;\n    WHILE NOT v_snapshot IS NULL\n    LOOP\n        RETURN NEXT(v_snapshot.commit_hash);\n        SELECT * FROM snapshot\n        INTO v_snapshot\n        WHERE parent_id = v_snapshot.id AND id = ANY(v_applied_snapshot_ids);\n    END LOOP;\nEND;\n$$ LANGUAGE plpgsql STABLE STRICT;\n",
                     "param_names": [
                         "p_package"
                     ],
@@ -831,11 +850,11 @@
             "comment": null,
             "kind": "function"
         },
-        "register_migration_dependencies": {
+        "synchronize_migration_dependencies": {
             "schema": "core_pg_migrations",
             "overloads": {
                 "migration, text[]": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION register_migration_dependencies (\n    p_migration migration, p_dependency_names text[]\n) RETURNS void AS $$\nBEGIN\n    INSERT INTO migration_dependency_relation (migration_id, depends_on_id)\n    SELECT p_migration.id, m.id\n    FROM migration m\n    WHERE m.name = ANY(p_dependency_names);\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "overload": "\nCREATE OR REPLACE FUNCTION synchronize_migration_dependencies (\n    p_migration migration, p_dependency_names text[]\n) RETURNS void AS $$\nDECLARE\n    v_dependency_ids int8[];\nBEGIN\n    v_dependency_ids := ARRAY(\n        SELECT id FROM migration\n        WHERE name = ANY(p_dependency_names)\n    );\n    INSERT INTO migration_dependency_relation (migration_id, depends_on_id)\n    SELECT p_migration.id, d_id\n    FROM unnest(v_dependency_ids) d_id\n    ON CONFLICT (migration_id, depends_on_id) DO NOTHING;\n    DELETE FROM migration_dependency_relation\n    WHERE migration_id = p_migration.id AND depends_on_id != ALL(v_dependency_ids);\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
                     "param_names": [
                         "p_migration",
                         "p_dependency_names"
@@ -848,7 +867,7 @@
             },
             "type": {
                 "schema": "core_pg_migrations",
-                "type": "register_migration_dependencies"
+                "type": "synchronize_migration_dependencies"
             },
             "comment": null,
             "kind": "function"
@@ -879,7 +898,7 @@
             "schema": "core_pg_migrations",
             "overloads": {
                 "execution, snapshot, text": {
-                    "overload": "\nCREATE OR REPLACE FUNCTION register_execution_snapshot_relation (\n    p_execution execution, p_snapshot snapshot, p_integrity_hash text\n) RETURNS void AS $$\nBEGIN\n    INSERT INTO execution_snapshot_relation(execution_id, snapshot_id, integrity_hash)\n    VALUES (p_execution.id, p_snapshot.id, p_integrity_hash);\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "overload": "\nCREATE OR REPLACE FUNCTION register_execution_snapshot_relation (\n    p_execution execution, p_snapshot snapshot, p_integrity_hash text\n) RETURNS void AS $$\nBEGIN\n    INSERT INTO execution_snapshot_relation(execution_id, snapshot_id, integrity_hash)\n    VALUES (p_execution.id, p_snapshot.id, p_integrity_hash);\nEND;\n$$ LANGUAGE plpgsql VOLATILE;\n",
                     "param_names": [
                         "p_execution",
                         "p_snapshot",
@@ -895,6 +914,99 @@
             "type": {
                 "schema": "core_pg_migrations",
                 "type": "register_execution_snapshot_relation"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "keep_snapshot_migration_ids": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "snapshot, int8[]": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION keep_snapshot_migration_ids (\n    p_snapshot snapshot, p_migration_ids int8[]\n) RETURNS void AS $$\nDECLARE\n    v_migration migration;\nBEGIN\n    PERFORM destroy_migration(m)\n    FROM migration m\n    WHERE snapshot_id = p_snapshot.id AND id != ALL(p_migration_ids);\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "param_names": [
+                        "p_snapshot",
+                        "p_migration_ids"
+                    ],
+                    "param_types": [
+                        "snapshot",
+                        "int8[]"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "keep_snapshot_migration_ids"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "destroy_migration": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "migration": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION destroy_migration (\n    p_migration migration\n) RETURNS SETOF migration AS $$\nDECLARE\n    v_drop_queries text[] := '{}'::text[];\n    v_drop_query text;\nBEGIN\n    v_drop_queries := v_drop_queries || format('DROP PROCEDURE %I', p_migration.upgrade_script_name);\n    v_drop_queries := v_drop_queries || format('DROP PROCEDURE %I', p_migration.downgrade_script_name);\n    IF p_migration.datafix_name IS NOT NULL THEN\n        v_drop_queries := v_drop_queries || format('DROP PROCEDURE %I', p_migration.datafix_name);\n    END IF;\n    FOR v_drop_query IN SELECT t FROM unnest(v_drop_queries) t\n    LOOP\n        EXECUTE v_drop_query;\n    END LOOP;\n    DELETE FROM migration_dependency_relation\n    WHERE migration_id = p_migration.id;\n    DELETE FROM migration\n    WHERE id = p_migration.id;\nEND;\n$$ LANGUAGE plpgsql VOLATILE STRICT;\n",
+                    "param_names": [
+                        "p_migration"
+                    ],
+                    "param_types": [
+                        "migration"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "destroy_migration"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "get_integrity_hash": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "text": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION get_integrity_hash (\n    p_package_name text\n) RETURNS text AS $$\nDECLARE\n    v_package package;\nBEGIN\n    SELECT * FROM package\n    INTO v_package\n    WHERE name = p_package_name LIMIT 1;\n    IF v_package IS NOT NULL THEN\n        RETURN get_integrity_hash(v_package);\n    END IF;\nEND;\n$$ LANGUAGE plpgsql STABLE;\n",
+                    "param_names": [
+                        "p_package_name"
+                    ],
+                    "param_types": [
+                        "text"
+                    ]
+                },
+                "package": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION get_integrity_hash (\n    p_package package\n) RETURNS text AS $$\nDECLARE\n    v_integrity_hash text;\nBEGIN\n    SELECT esr.integrity_hash\n        INTO v_integrity_hash\n        FROM execution_snapshot_relation esr\n        INNER JOIN execution e ON esr.execution_id = e.id\n        INNER JOIN package p ON e.package_id = p.id\n        WHERE p.id = p_package.id\n        ORDER BY e.created_at DESC LIMIT 1\n    ;\n    RETURN v_integrity_hash;\nEND;\n$$ LANGUAGE plpgsql STABLE STRICT;\n",
+                    "param_names": [
+                        "p_package"
+                    ],
+                    "param_types": [
+                        "package"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "get_integrity_hash"
+            },
+            "comment": null,
+            "kind": "function"
+        },
+        "get_snapshot_migrations": {
+            "schema": "core_pg_migrations",
+            "overloads": {
+                "snapshot, execution_action": {
+                    "overload": "\nCREATE OR REPLACE FUNCTION get_snapshot_migrations (\n    p_snapshot snapshot, p_action execution_action\n) RETURNS SETOF migration AS $$\nBEGIN\n    RETURN QUERY\n        SELECT * FROM migration\n        WHERE snapshot_id = p_snapshot.id\n        ORDER BY\n        CASE WHEN p_action = 'upgrade'::execution_action\n            THEN heap_position\n            ELSE -heap_position END\n    ;\nEND;\n$$ LANGUAGE plpgsql STABLE;\n",
+                    "param_names": [
+                        "p_snapshot",
+                        "p_action"
+                    ],
+                    "param_types": [
+                        "snapshot",
+                        "execution_action"
+                    ]
+                }
+            },
+            "type": {
+                "schema": "core_pg_migrations",
+                "type": "get_snapshot_migrations"
             },
             "comment": null,
             "kind": "function"
