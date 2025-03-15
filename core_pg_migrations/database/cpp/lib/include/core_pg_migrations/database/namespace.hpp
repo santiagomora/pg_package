@@ -96,9 +96,9 @@ struct create_execution
 };
 
 
-struct create_migration
+struct create_or_update_migration
 : public pg::queries_database_on_transaction<
-    create_migration,
+    create_or_update_migration,
     pg::fetch_one_functor,
     pg::SingleResult_<migration>>
 {
@@ -106,7 +106,7 @@ struct create_migration
         const snapshot&, const pg::text&, const pg::text&, const pg::text&, const std::optional<pg::text>&,
         const pg::int8&
     ) {
-        return "SELECT create_migration(\
+        return "SELECT create_or_update_migration(\
             p_snapshot                 := $1,\
             p_name                     := $2,\
             p_upgrade_procedure_name   := $3,\
@@ -117,16 +117,16 @@ struct create_migration
 };
 
 
-struct create_package
+struct create_or_update_package
 : public pg::queries_database_on_transaction<
-    create_package,
+    create_or_update_package,
     pg::fetch_one_functor,
     pg::SingleResult_<package>>
 {
     static constexpr const std::string_view query_string (
         const pg::text&, const pg::text&, const pg::text&, const pg::text&, const pg::text&
     ) {
-        return "SELECT create_package(\
+        return "SELECT create_or_update_package(\
             p_name                  := $1,\
             p_remote_name           := $2,\
             p_tracked_branch_name   := $3,\
@@ -160,16 +160,16 @@ struct get_applied_snapshots
 };
 
 
-struct create_snapshot
+struct create_or_update_snapshot
 : public pg::queries_database_on_transaction<
-    create_snapshot,
+    create_or_update_snapshot,
     pg::fetch_one_functor,
     pg::SingleResult_<snapshot>>
 {
     static constexpr const std::string_view query_string (
         const pg::int8&, const pg::text&, const std::optional<pg::text>&, const std::optional<pg::text>&
     ) {
-        return "SELECT create_snapshot (\
+        return "SELECT create_or_update_snapshot (\
             p_package_id  := $1,\
             p_hash        := $2,\
             p_parent_hash := $3,\
@@ -179,7 +179,7 @@ struct create_snapshot
     static constexpr const std::string_view query_string (
         const package&, const pg::text&, const std::optional<snapshot>&, const std::optional<snapshot>&
     ) {
-        return "SELECT create_snapshot (\
+        return "SELECT create_or_update_snapshot (\
             p_package     := $1,\
             p_hash        := $2,\
             p_parent_hash := $3,\
@@ -241,17 +241,17 @@ struct register_execution_snapshot_relation
 };
 
 
-struct get_integrity_hash
+struct get_package_integrity_hash_at_snapshot
 : public pg::queries_database_on_transaction<
-    get_integrity_hash,
+    get_package_integrity_hash_at_snapshot,
     pg::fetch_one_functor,
     pg::SingleResult_<pg::text>>
 {
     static constexpr const std::string_view query_string (
-        const pg::text&
+        const pg::text&, const pg::text&
     ) {
-        return "SELECT get_integrity_hash (\
-            p_package_name := $1\
+        return "SELECT get_package_integrity_hash_at_snapshot (\
+            p_package_name := $1, p_commit_hash := $2\
         )";
     }
 };

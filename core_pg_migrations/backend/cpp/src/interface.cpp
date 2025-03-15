@@ -19,7 +19,7 @@ std::deque<snapshot> get_unapplied_package_snapshots_for_upgrade_dry_run(
         std::deque<cm_bk::snapshot> v_applied_snapshots, v_unapplied_snapshots;
         cm_db::execution_action v_action = cm_db::execution_action::upgrade;
         std::tie(v_applied_snapshots, v_unapplied_snapshots) = get_request_snapshot_list(
-            v_tx, v_package, p_hash, v_action, true
+            v_tx, v_package, p_hash, v_action
         );
         v_res = ct_i::wrap<std::deque<snapshot>>(v_unapplied_snapshots);
         v_tx.commit();
@@ -89,7 +89,7 @@ std::deque<snapshot> get_applied_package_snapshots_for_downgrade_dry_run (
         std::deque<cm_bk::snapshot> v_applied_snapshots, v_unapply_snapshots;
         cm_db::execution_action v_action = cm_db::execution_action::upgrade;
         std::tie(v_applied_snapshots, v_unapply_snapshots) = get_request_snapshot_list(
-            v_tx, v_package, p_hash, v_action, false
+            v_tx, v_package, p_hash, v_action
         );
         v_res = ct_i::wrap<std::deque<snapshot>>(v_unapply_snapshots);
         v_tx.commit();

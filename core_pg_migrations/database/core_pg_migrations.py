@@ -106,15 +106,15 @@ class create_execution(pw.create_execution, metaclass=pg.function):
     pass
 
 
-class create_migration(pw.create_migration, metaclass=pg.function):
+class create_or_update_migration(pw.create_or_update_migration, metaclass=pg.function):
     pass
 
 
-class create_package(pw.create_package, metaclass=pg.function):
+class create_or_update_package(pw.create_or_update_package, metaclass=pg.function):
     pass
 
 
-class create_snapshot(pw.create_snapshot, metaclass=pg.function):
+class create_or_update_snapshot(pw.create_or_update_snapshot, metaclass=pg.function):
     pass
 
 
@@ -142,7 +142,7 @@ class destroy_migration(pw.destroy_migration, metaclass=pg.function):
     pass
 
 
-class get_integrity_hash(pw.get_integrity_hash, metaclass=pg.function):
+class get_package_integrity_hash_at_snapshot(pw.get_package_integrity_hash_at_snapshot, metaclass=pg.function):
     pass
 
 

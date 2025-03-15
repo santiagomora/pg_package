@@ -1,8 +1,8 @@
 #include "core_pg_migrations/database/namespace.hpp"
 
 
-// TODO create_snapshot should handle conflicts on package_id, commit_hash and update to the EXCLUDED snapshot attributes (DONE)
-// TODO create_migration should handle conflicts on name and update to the EXCLUDED migration attributes (DONE)
+// TODO create_or_update_snapshot should handle conflicts on package_id, commit_hash and update to the EXCLUDED snapshot attributes (DONE)
+// TODO create_or_update_migration should handle conflicts on name and update to the EXCLUDED migration attributes (DONE)
 // TODO add api cm_db::get_snapshot_migrations::query has one overload for snapshot (DONE)
 // TODO add api cm_db::keep_snapshot_migration_ids::query (DONE)
 // TODO add get_snapshot_by_commit_hash
@@ -125,9 +125,9 @@ $$ LANGUAGE plpgsql VOLATILE;
 };
 
 
-std::vector<std::string_view> create_migration::overloads = {
+std::vector<std::string_view> create_or_update_migration::overloads = {
 R"###(
-CREATE OR REPLACE FUNCTION create_migration (
+CREATE OR REPLACE FUNCTION create_or_update_migration (
     p_snapshot snapshot, p_name text, p_upgrade_procedure_name text,
     p_downgrade_procedure_name text, p_datafix_name text, p_heap_position int8
 ) RETURNS migration AS $$
@@ -162,9 +162,9 @@ $$ LANGUAGE plpgsql VOLATILE;
 };
 
 
-std::vector<std::string_view> create_package::overloads = {
+std::vector<std::string_view> create_or_update_package::overloads = {
 R"###(
-CREATE OR REPLACE FUNCTION create_package (
+CREATE OR REPLACE FUNCTION create_or_update_package (
     p_name text, p_remote_name text, p_tracked_branch_name text,
     p_schema_name text, p_procedure_schema_name text
 ) RETURNS package AS $$
@@ -186,9 +186,9 @@ $$ LANGUAGE plpgsql VOLATILE STRICT;
 };
 
 
-std::vector<std::string_view> create_snapshot::overloads = {
+std::vector<std::string_view> create_or_update_snapshot::overloads = {
 R"###(
-CREATE OR REPLACE FUNCTION create_snapshot (
+CREATE OR REPLACE FUNCTION create_or_update_snapshot (
     p_package_id int8, p_hash text, p_parent_hash text = NULL, p_child_hash text = NULL
 ) RETURNS snapshot AS $$
 DECLARE
@@ -209,12 +209,12 @@ BEGIN
         INTO v_child_snapshot
         WHERE commit_hash = p_child_hash
     ;
-    RETURN create_snapshot(v_package, p_hash, v_parent_snapshot, v_child_snapshot);
+    RETURN create_or_update_snapshot(v_package, p_hash, v_parent_snapshot, v_child_snapshot);
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 )###",
 R"###(
-CREATE OR REPLACE FUNCTION create_snapshot (
+CREATE OR REPLACE FUNCTION create_or_update_snapshot (
     p_package package, p_hash text, p_parent snapshot, p_child snapshot
 ) RETURNS snapshot AS $$
 DECLARE
@@ -296,26 +296,37 @@ $$ LANGUAGE plpgsql STABLE STRICT;
 };
 
 
-std::vector<std::string_view> get_integrity_hash::overloads = {
+std::vector<std::string_view> get_package_integrity_hash_at_snapshot::overloads = {
 R"###(
-CREATE OR REPLACE FUNCTION get_integrity_hash (
-    p_package_name text
+CREATE OR REPLACE FUNCTION get_package_integrity_hash_at_snapshot (
+    p_package_name text, p_commit_hash text
 ) RETURNS text AS $$
 DECLARE
     v_package package;
+    v_snapshot snapshot;
 BEGIN
+    -- Find that the last snapshot execution action was upgrade and get the integrity hash
     SELECT * FROM package
-    INTO v_package
-    WHERE name = p_package_name LIMIT 1;
-    IF v_package IS NOT NULL THEN
-        RETURN get_integrity_hash(v_package);
+        INTO v_package
+        WHERE name = p_package_name LIMIT 1;
+    IF v_package IS NULL
+    THEN
+        RAISE EXCEPTION 'Integrity hash retrieval: package "%" must exist to get the integrity hash', p_package_name;
     END IF;
+    SELECT * FROM snapshot
+        INTO v_snapshot
+        WHERE name = p_commit_hash AND p_commit_hash = ANY(get_applied_snapshots(v_package)) LIMIT 1;
+    IF v_snapshot IS NULL
+    THEN
+        RAISE EXCEPTION 'Integrity hash retrieval: snapshot "%" must exist to get the integrity hash', p_commit_hash;
+    END IF;
+    RETURN get_package_integrity_hash_at_snapshot(v_package, v_snapshot);
 END;
 $$ LANGUAGE plpgsql STABLE;
 )###",
 R"###(
-CREATE OR REPLACE FUNCTION get_integrity_hash (
-    p_package package
+CREATE OR REPLACE FUNCTION get_package_integrity_hash_at_snapshot (
+    p_package package, p_snapshot snapshot
 ) RETURNS text AS $$
 DECLARE
     v_integrity_hash text;
@@ -326,8 +337,7 @@ BEGIN
         INNER JOIN execution e ON esr.execution_id = e.id
         INNER JOIN package p ON e.package_id = p.id
         WHERE p.id = p_package.id
-        ORDER BY e.created_at DESC LIMIT 1
-    ;
+        ORDER BY e.created_at DESC LIMIT 1;
     RETURN v_integrity_hash;
 END;
 $$ LANGUAGE plpgsql STABLE STRICT;

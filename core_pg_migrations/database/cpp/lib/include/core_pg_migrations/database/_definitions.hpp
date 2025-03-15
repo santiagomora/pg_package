@@ -110,19 +110,19 @@
 
 #define CORE_PG_MIGRATIONS_DB_CREATE_MIGRATION PG_INVOKABLE(\
     CORE_PG_MIGRATIONS_DB_CREATE_MIGRATION,\
-    (core_pg_migrations::database::functions, create_migration)\
+    (core_pg_migrations::database::functions, create_or_update_migration)\
 )
 
 
 #define CORE_PG_MIGRATIONS_DB_CREATE_PACKAGE PG_INVOKABLE(\
     CORE_PG_MIGRATIONS_DB_CREATE_PACKAGE,\
-    (core_pg_migrations::database::functions, create_package)\
+    (core_pg_migrations::database::functions, create_or_update_package)\
 )
 
 
 #define CORE_PG_MIGRATIONS_DB_CREATE_SNAPSHOT PG_INVOKABLE(\
     CORE_PG_MIGRATIONS_DB_CREATE_SNAPSHOT,\
-    (core_pg_migrations::database::functions, create_snapshot)\
+    (core_pg_migrations::database::functions, create_or_update_snapshot)\
 )
 
 
@@ -152,7 +152,7 @@
 
 #define CORE_PG_MIGRATIONS_DB_GET_INTEGRITY_HASH PG_INVOKABLE(\
     CORE_PG_MIGRATIONS_DB_GET_INTEGRITY_HASH,\
-    (core_pg_migrations::database::functions, get_integrity_hash)\
+    (core_pg_migrations::database::functions, get_package_integrity_hash_at_snapshot)\
 )
 
 

@@ -84,8 +84,9 @@ pg::text get_package_integrity_hash (
 
 void check_package_integrity (
     pqxx::work& p_tx, const package& p_package, const std::deque<snapshot>& p_applied_snapshots,
-    const std::vector<pg::text>& p_applied_snapshot_hashes, const bool& p_check_db_integrity
+    const std::vector<pg::text>& p_applied_snapshot_hashes
 ) {
+    // FIXME show failing hashes
     if (p_applied_snapshots.size() == 0)
     {
         return;
@@ -95,19 +96,21 @@ void check_package_integrity (
     {
         if (v_snapshot.hash != p_applied_snapshot_hashes[ix++])
         {
-            throw std::invalid_argument("Package integrity exception. Repository snapshot hash does not match database hash."); // FIXME
+            throw std::invalid_argument("Package integrity exception. Repository snapshot hash does not match database hash.");
         }
     }
-    pg::text v_db_integrity_hash = cm_db::get_integrity_hash::query(p_tx, p_package.name);
-    if (p_check_db_integrity && get_package_integrity_hash(p_package, p_applied_snapshots) != v_db_integrity_hash)
+    pg::text v_db_integrity_hash = cm_db::get_package_integrity_hash_at_snapshot::query(
+        p_tx, p_package.name, p_applied_snapshots.back().hash
+    );
+    if (get_package_integrity_hash(p_package, p_applied_snapshots) != v_db_integrity_hash)
     {
-        throw std::invalid_argument("Package integrity exception. Repository calculated integrity hash does not match database integrity hash."); // FIXME
+        throw std::invalid_argument("Package integrity exception. Repository calculated integrity hash does not match database integrity hash.");
     }
 }
 
 
 size_t get_snapshot_index_by_hash (
-    std::string p_snapshot_hash, std::deque<snapshot>& p_list
+    std::string p_snapshot_hash, std::deque<snapshot> p_list
 ) {
     ssize_t v_res = -1; size_t ix = 0;
     for (const snapshot& v_snapshot : p_list)
@@ -123,20 +126,6 @@ size_t get_snapshot_index_by_hash (
 }
 
 
-std::deque<snapshot> get_package_applied_snapshots (
-    const package& p_package, const std::vector<pg::text>& p_applied_snapshot_hashes
-) {
-    return std::deque<snapshot>(p_package.snapshots.begin(), p_package.snapshots.begin() + p_applied_snapshot_hashes.size());
-}
-
-
-std::deque<snapshot> get_package_unapplied_snapshots (
-    const package& p_package, const std::vector<pg::text>& p_applied_snapshot_hashes
-) {
-    return std::deque<snapshot>(p_package.snapshots.begin() + p_applied_snapshot_hashes.size(), p_package.snapshots.end());
-}
-
-
 std::vector<pg::text> determine_package_applied_snapshots (
     pqxx::work& p_tx, const package& p_package
 ) {
@@ -144,35 +133,46 @@ std::vector<pg::text> determine_package_applied_snapshots (
     {
         return {};
     }
-    const cm_db::package v_db_package = cm_db::get_package_by_name::query(p_tx, p_package.name);
-    return cm_db::get_applied_snapshots::query(p_tx, v_db_package);
+    return cm_db::get_applied_snapshots::query(p_tx, p_package.name);
 }
 
 
 std::tuple<std::deque<snapshot>, std::deque<snapshot>> get_request_snapshot_list (
     pqxx::work& p_tx, const package& p_package, const std::string& p_hash,
-    const cm_db::execution_action& p_action, const bool&& p_check_db_integrity
+    const cm_db::execution_action& p_action
 ) {
     std::vector<pg::text> v_applied_snapshot_hashes = determine_package_applied_snapshots(p_tx, p_package);
-    std::cout << ct::to_str(v_applied_snapshot_hashes) << std::endl;
-    std::deque<snapshot> v_applied_snapshots = get_package_applied_snapshots(p_package, v_applied_snapshot_hashes);
-    std::deque<snapshot> v_unapplied_snapshots = get_package_unapplied_snapshots(p_package, v_applied_snapshot_hashes);
-    check_package_integrity(p_tx, p_package, v_applied_snapshots, v_applied_snapshot_hashes, p_check_db_integrity);
-    size_t v_pos;
+    std::deque<snapshot> v_applied_snapshots = std::deque<snapshot>(
+        p_package.snapshots.begin(), p_package.snapshots.begin() + v_applied_snapshot_hashes.size()
+    );
+    std::deque<snapshot> v_unapplied_snapshots;
+    size_t v_request_snapshot_position;
     switch (p_action)
     {
         case cm_db::execution_action::upgrade:
-            v_pos = get_snapshot_index_by_hash(p_hash, v_unapplied_snapshots);
+        {
             v_unapplied_snapshots = std::deque<snapshot>(
-                v_unapplied_snapshots.begin(), v_unapplied_snapshots.begin() + v_pos + 1
+                p_package.snapshots.begin() + v_applied_snapshot_hashes.size(), p_package.snapshots.end()
+            );
+            check_package_integrity(p_tx, p_package, v_applied_snapshots, v_applied_snapshot_hashes);
+            v_request_snapshot_position = get_snapshot_index_by_hash(p_hash, v_unapplied_snapshots);
+            v_unapplied_snapshots = std::deque<snapshot>(
+                v_unapplied_snapshots.begin(), v_unapplied_snapshots.begin() + v_request_snapshot_position + 1
             );
             break;
+        }
         case cm_db::execution_action::downgrade:
-            v_pos = get_snapshot_index_by_hash(p_hash, v_applied_snapshots);
+        {
+            v_request_snapshot_position = get_snapshot_index_by_hash(p_hash, v_applied_snapshots);
+            v_applied_snapshots = std::deque<snapshot>(
+                p_package.snapshots.begin(), p_package.snapshots.begin() + v_request_snapshot_position
+            );
+            check_package_integrity(p_tx, p_package, v_applied_snapshots, v_applied_snapshot_hashes);
             v_unapplied_snapshots = std::deque<snapshot>(
-                v_applied_snapshots.begin() + v_pos, v_applied_snapshots.end()
+                p_package.snapshots.begin() + v_request_snapshot_position, p_package.snapshots.end()
             );
             break;
+        }
     }
     return std::make_tuple(v_applied_snapshots, v_unapplied_snapshots);
 }
@@ -202,7 +202,7 @@ void register_snapshot_migrations (
     for (const auto& v_migration : p_migrations)
     {
         v_message << "Saving migration \"" << v_migration.name << "\"..."; cm_u::prompt_notice(v_message);
-        const cm_db::migration v_db_migration = cm_db::create_migration::query(
+        const cm_db::migration v_db_migration = cm_db::create_or_update_migration::query(
             p_tx, p_db_snapshot, v_migration.name, v_migration.upgrade_procedure_name,
             v_migration.downgrade_procedure_name, v_migration.datafix_name, std::as_const(v_added)
         );
@@ -255,14 +255,14 @@ void apply_snapshots_on_core_pg_migrations (
         p_applied.emplace_back(v_snapshot);
         core_pg_migrations_apply_snapshot_migrations(p_tx, v_snapshot);
         v_message << "Creating \"" << p_package.name << "\" package..."; cm_u::prompt_notice(v_message);
-        v_db_package = cm_db::create_package::query(
+        v_db_package = cm_db::create_or_update_package::query(
             p_tx, p_package.name, p_package.remote_name, p_package.tracked_branch_name,
             p_package.schema_name, p_package.procedure_schema_name
         );
         v_integrity_hash = get_package_integrity_hash(p_package, p_applied);
         v_db_execution = cm_db::create_execution::query(p_tx, std::as_const(v_db_package), p_action);
         v_message << "Saving snapshot \"" << v_snapshot.hash << "\"..."; cm_u::prompt_notice(v_message);
-        v_db_snapshot = cm_db::create_snapshot::query(
+        v_db_snapshot = cm_db::create_or_update_snapshot::query(
             p_tx, std::as_const(v_db_execution.package_id), v_snapshot.hash,
             v_snapshot.previous_hash, v_snapshot.next_hash
         );
@@ -283,7 +283,7 @@ void apply_snapshots_on_core_pg_migrations (
             v_integrity_hash = get_package_integrity_hash(p_package, p_applied);
             core_pg_migrations_apply_snapshot_migrations(v_tx_sub, v_snapshot);
             v_message << "Saving snapshot \"" << v_snapshot.hash << "\"..."; cm_u::prompt_notice(v_message);
-            v_db_snapshot = cm_db::create_snapshot::query(
+            v_db_snapshot = cm_db::create_or_update_snapshot::query(
                 v_tx_sub, std::as_const(v_db_execution.package_id), v_snapshot.hash,
                 v_snapshot.previous_hash, v_snapshot.next_hash
             );
@@ -319,7 +319,7 @@ void upgrade_to_package_snapshot_hash (
     std::deque<snapshot> v_applied_snapshots, v_unapplied_snapshots;
     cm_db::execution_action v_action = cm_db::execution_action::upgrade;
     std::tie(v_applied_snapshots, v_unapplied_snapshots) = get_request_snapshot_list(
-        p_tx, p_package, p_hash, v_action, true
+        p_tx, p_package, p_hash, v_action
     );
     if (p_package.name == "core_pg_migrations")
     {
@@ -355,21 +355,23 @@ void unapply_snapshots_from_core_pg_migrations (
     std::deque<snapshot> p_unapply, const cm_db::execution_action& p_action
 ) {
     // p_applied represents the snapshots that remain applied in the database
-    // p_unapplied represents the snapshots to be unapplied from the databasestd::ostringstream v_message;
-    if (p_applied.size() <= 0)
+    // p_unapplied represents the snapshots to be unapplied from the database
+    p_applied.insert(p_applied.end(), p_unapply.begin(), p_unapply.end());
+    if (p_applied.size() == 0)
     {
         throw std::invalid_argument("Package must exist in database to apply downgrade...");
     }
     std::ostringstream v_message;
     const cm_db::package v_db_package = cm_db::get_package_by_name::query(p_tx, p_package.name);
     const cm_db::execution v_db_execution = cm_db::create_execution::query(p_tx, v_db_package, p_action);
+    // here p_applied represents the applied snapshots of the database
     while (p_unapply.size() > 0)
     {
         try
         {
-            const snapshot v_snapshot = p_unapply.back();
-            p_unapply.pop_back();
+            const snapshot v_snapshot = p_applied.back();
             p_applied.pop_back();
+            p_unapply.pop_back();
             const pg::text v_integrity_hash = get_package_integrity_hash(p_package, p_applied);
             pqxx::subtransaction v_tx_sub(p_tx, std::string("unapply_snapshot_") + v_snapshot.hash);
             const cm_db::snapshot v_db_snapshot = cm_db::get_snapshot_by_commit_hash::query(v_tx_sub, v_snapshot.hash);
@@ -414,7 +416,7 @@ void downgrade_to_package_snapshot_hash (
     std::deque<snapshot> v_applied_snapshots, v_unapplied_snapshots;
     cm_db::execution_action v_action = cm_db::execution_action::downgrade;
     std::tie(v_applied_snapshots, v_unapplied_snapshots) = get_request_snapshot_list(
-        p_tx, p_package, p_hash, v_action, false
+        p_tx, p_package, p_hash, v_action
     );
     if (p_package.name == "core_pg_migrations")
     {

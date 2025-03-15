@@ -35,7 +35,7 @@ std::tuple<std::deque<snapshot>, std::deque<snapshot>> get_applied_and_unapplied
 );
 std::tuple<std::deque<snapshot>, std::deque<snapshot>> get_request_snapshot_list (
     pqxx::work& p_tx, const package& p_package, const std::string& p_hash,
-    const cm_db::execution_action& p_action, const bool&& p_check_db_integrity
+    const cm_db::execution_action& p_action
 );
 }
 
