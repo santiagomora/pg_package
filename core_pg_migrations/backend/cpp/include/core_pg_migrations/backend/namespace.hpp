@@ -13,16 +13,16 @@ namespace cm_db = core_pg_migrations::database;
 
 namespace core_pg_migrations::backend
 {
-    CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_MIGRATION);
-    CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_SNAPSHOT);
-    CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_PACKAGE);
+CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_MIGRATION);
+CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_SNAPSHOT);
+CPP_CLASSDEF_DECLARATION(CORE_PG_MIGRATIONS_BK_PACKAGE);
 }
 
 
 namespace core_pg_migrations::backend
 {
 void set_search_path_for_package(
-    pqxx::work& p_tx, const package& p_package
+    pqxx::dbtransaction& p_tx, const package& p_package
 );
 void upgrade_to_package_snapshot_hash (
     pqxx::work& p_tx, const package& p_package, const pg::text& p_hash

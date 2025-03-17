@@ -16,7 +16,7 @@ DATAFIX_NAME: Optional[str] = None
 
 
 def upgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
-    yield from sb.builder(snapshot).create().set_search_path()
+    yield from sb.builder(snapshot).create()
 
 
 def downgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:

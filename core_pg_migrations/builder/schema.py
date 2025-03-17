@@ -1145,11 +1145,6 @@ class SchemaBuilder(list[Any], Builder):
         self.append(self.schema.drop())
         return self
 
-    def set_search_path(self) -> 'SchemaBuilder':
-        sp = SearchPath('', self, [self.schema.name])
-        self.append(sp.set(None))
-        return self
-
 
 def builder(schema: dict[str, Any]) -> SchemaBuilder:
     name = next(iter(schema))

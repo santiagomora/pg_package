@@ -34,7 +34,7 @@ void prompt_notice (
 
 
 std::string identifier (
-    const pqxx::work& tx, const std::string& name
+    const pqxx::dbtransaction& tx, const std::string& name
 ) {
     std::regex hasupper("A-Z");
     std::regex begins_with_number("^0-9");

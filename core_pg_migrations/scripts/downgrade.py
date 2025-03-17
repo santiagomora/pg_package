@@ -19,12 +19,13 @@ def run(
 ) -> None:
     if script_arguments.using_package is not None:
         cm.prompt_notice(f'Downgrading package "{script_arguments.package}" to snapshot "{script_arguments.snapshot}" using "{script_arguments.using_package}" configuration...')
-        config = cm.DowngradeEnvironment(script_arguments.package, script_arguments, cm.DowngradeEnvironment(script_arguments.using_package, script_arguments))
+        package_config = cm.DowngradeEnvironment(script_arguments.using_package, script_arguments, None)
+        config = cm.DowngradeEnvironment(script_arguments.package, script_arguments, script_arguments.snapshot, package_config)
     else:
         cm.prompt_notice(f'Downgrading package "{script_arguments.package}" to snapshot "{script_arguments.snapshot}". Checking if "core_pg_migrations" is up to date...')
-        package_config = cm.DowngradeEnvironment(script_arguments.package, script_arguments)
-        migrations_config = cm.DowngradeEnvironment("core_pg_migrations", script_arguments, package_config)
-        check_core_pg_migrations_is_up_to_date(migrations_config)
+        package_config = cm.DowngradeEnvironment(script_arguments.package, script_arguments, script_arguments.snapshot)
+        migrations_config = cm.DowngradeEnvironment("core_pg_migrations", script_arguments, None, package_config)
+        get_current_state(migrations_config)
         config = package_config
     current_package_state = get_current_state(config)
     if config.DRY_RUN:
@@ -32,10 +33,11 @@ def run(
 UPGRADE MIGRATION SCRIPT DRY RUN:
 PACKAGE:\t{config.PACKAGE_NAME} 
 CONNECTION:\t{config.DSN}""")
-        for _snapshot in get_applied_package_snapshots_for_downgrade_dry_run(config, current_package_state, config.SNAPSHOT):
+        for _snapshot in get_applied_package_snapshots_for_downgrade_dry_run(config, current_package_state, config.LAST_SNAPSHOT.commit_hash):
             downgrade_to_package_snapshot_hash_dry_run(_snapshot)
     else:
-        downgrade_to_package_snapshot_hash(config, current_package_state, config.SNAPSHOT)
+        cm.prompt_notice(f'Downgrading using database connection "{config.DSN}"...')
+        downgrade_to_package_snapshot_hash(config, current_package_state, config.LAST_SNAPSHOT.commit_hash)
 
 
 if __name__ == '__main__':

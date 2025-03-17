@@ -21,6 +21,24 @@ PG_CPP_TABLE_DECLARATION(CORE_PG_MIGRATIONS_DB_EXECUTION_SNAPSHOT_RELATION);
 namespace core_pg_migrations::database
 {
 
+struct get_package_tables
+: public pg::queries_database_on_transaction<
+    get_package_tables,
+    pg::fetch_many_functor,
+    pg::ContainedResult_<pg::text, std::vector>>
+{
+    static constexpr const std::string_view query_string (
+        const package&
+    ) {
+        return "\
+            SELECT tbs.table_name\
+            FROM information_schema.tables tbs\
+            WHERE tbs.table_schema = schema_name($1::package)\
+        ";
+    }
+};
+
+
 struct schema_exists
 : public pg::queries_database_on_transaction<
     schema_exists,

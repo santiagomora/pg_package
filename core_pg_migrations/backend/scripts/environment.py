@@ -142,7 +142,7 @@ class _ExecutionEnvironment:
         return self._snapshots
 
     @property
-    def LAST_GENERATED_SNAPSHOT(self) -> SnapshotList.Node:
+    def LAST_SNAPSHOT(self) -> SnapshotList.Node:
         return self.GENERATED_SNAPSHOTS_LIST.last_node
 
     @property
@@ -153,7 +153,7 @@ class _ExecutionEnvironment:
 
 class _StateChangeEnvironment(_ExecutionEnvironment):
     def __init__(
-        self, package: str, args: argparse.Namespace, requested_snapshot: str,
+        self, package: str, args: argparse.Namespace, requested_snapshot: Optional[str],
         parent_environment: Optional['UpgradeEnvironment'] = None,
     ) -> None:
         _ExecutionEnvironment.__init__(self, package, args)
@@ -167,11 +167,6 @@ class _StateChangeEnvironment(_ExecutionEnvironment):
         if self._snapshots is None:
             self._obtain_snapshot_list_from_path(self.SNAPSHOT_PATH, self._requested_snapshot)
         return self._snapshots
-
-    @property
-    @functools.cache
-    def SNAPSHOT(self) -> SnapshotList.Node:
-        return self.LAST_GENERATED_SNAPSHOT if self.args.snapshot is None else self.args.snapshot
 
     def get_migration_modules(self, snapshot: SnapshotList.Node) -> Generator[ModuleType, None, None]:
         for f in os.listdir(self.MIGRATION_PATH):
@@ -202,9 +197,10 @@ class _StateChangeEnvironment(_ExecutionEnvironment):
 
 class UpgradeEnvironment(_StateChangeEnvironment):
     def __init__(
-        self, package: str, args: argparse.Namespace, parent_environment: Optional['UpgradeEnvironment'] = None
+        self, package: str, args: argparse.Namespace, snapshot: Optional[str],
+        parent_environment: Optional['UpgradeEnvironment'] = None,
     ) -> None:
-        _StateChangeEnvironment.__init__(self, package, args, args.snapshot if args.snapshot is not None else self.LAST_GENERATED_SNAPSHOT, parent_environment)
+        _StateChangeEnvironment.__init__(self, package, args, snapshot, parent_environment)
 
     def opposite_action(self) -> mgr.execution_action.enum:
         return mgr.execution_action.enum.downgrade
@@ -212,9 +208,10 @@ class UpgradeEnvironment(_StateChangeEnvironment):
 
 class DowngradeEnvironment(_StateChangeEnvironment):
     def __init__(
-        self, package: str, args: argparse.Namespace, parent_environment: Optional['UpgradeEnvironment'] = None
+        self, package: str, args: argparse.Namespace, snapshot: Optional[str],
+        parent_environment: Optional['UpgradeEnvironment'] = None,
     ) -> None:
-        _StateChangeEnvironment.__init__(self, package, args, args.snapshot, parent_environment)
+        _StateChangeEnvironment.__init__(self, package, args, snapshot, parent_environment)
 
     def opposite_action(self) -> mgr.execution_action.enum:
         return mgr.execution_action.enum.upgrade

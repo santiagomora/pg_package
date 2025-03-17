@@ -22,7 +22,7 @@ namespace core_pg_migrations::util
  */
 void prompt_notice (std::ostringstream&);
 void prompt_error (std::ostringstream&);
-std::string identifier (const pqxx::work& tx, const std::string& name);
+std::string identifier (const pqxx::dbtransaction& tx, const std::string& name);
 std::string sha512(const std::string& data);
 }
 

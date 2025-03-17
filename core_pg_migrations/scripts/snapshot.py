@@ -65,7 +65,7 @@ def run(config: cm.SnapshotEnvironment) -> None:
     cm.prompt_notice(f'Generating snapshot for package {config.PACKAGE_NAME} at commit "{config.COMMIT_HASH}" tracking branch "{config.TRACKED_BRANCH}" in branch "{config.CURRENT_BRANCH}"...')
     # Get the snapshot
     cm.prompt_notice(f'Checking if package has snapshots...')
-    last_snapshot = config.LAST_GENERATED_SNAPSHOT
+    last_snapshot = config.LAST_SNAPSHOT
     if last_snapshot is None:
         # 1. last snapshot is none, then user is generating first package snapshot
         cm.prompt_notice(f'No snapshots detected. Generating first snapshot at "{config.COMMIT_HASH}"...')

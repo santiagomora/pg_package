@@ -106,7 +106,7 @@ if __name__ == '__main__':
         prog='Generate Migration',
         description='Generates database migrations for ordered database changes and datafixes',
         epilog='')
-
+    sys.path.insert(0, os.getcwd())
     parser.add_argument('--package', help='Indicate a package to run the migrations upon', required=True)
     group_exc = parser.add_mutually_exclusive_group(required=True)
     group_exc.add_argument('--datafix', type=str, help='Generate a datafix file with the given name. The name must be unique amongst existing datafixes')

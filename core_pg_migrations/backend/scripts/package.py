@@ -15,7 +15,7 @@ def get_migration_upgrade_script(
     cursor: psycopg.ClientCursor, config: UpgradeEnvironment, migration: MigrationWrapper,
     snapshot: SnapshotList.Node
 ) -> tuple[str, str, str, str]:
-    prompt_notice(f'Generating migration upgrade script: {migration.NAME}')
+    # prompt_notice(f'Generating migration upgrade script: {migration.NAME}')
     queries: list[str] = []
     procedure_name: str = config.get_migration_upgrade_sql_procedure_name(snapshot.commit_hash, migration.NAME)
     try:
@@ -43,7 +43,7 @@ def get_migration_downgrade_script(
     cursor: psycopg.ClientCursor, config: UpgradeEnvironment, migration: MigrationWrapper,
     snapshot: SnapshotList.Node
 ) -> tuple[str, str, str, str]:
-    prompt_notice(f'Generating migration downgrade script: {migration.NAME}')
+    # prompt_notice(f'Generating migration downgrade script: {migration.NAME}')
     queries: list[str] = []
     procedure_name: str = config.get_migration_downgrade_sql_procedure_name(snapshot.commit_hash, migration.NAME)
     try:
@@ -71,7 +71,7 @@ def get_snapshot_migrations(
     res: list[migration] = []
     with psycopg.connect(config.DSN) as connection:
         with psycopg.ClientCursor(connection) as cursor:
-            prompt_notice(f'Generating migration script for snapshot "{snapshot.commit_hash}".')
+            prompt_notice(f'Generating migration script for package "{config.PACKAGE_NAME}" at snapshot "{snapshot.commit_hash}".')
             transaction_queries: list[str] = []
             while len(execution_heap) > 0:
                 migration_wrapper: MigrationWrapper = execution_heap.pop()

@@ -304,6 +304,7 @@ CREATE OR REPLACE FUNCTION get_package_integrity_hash_at_snapshot (
 DECLARE
     v_package package;
     v_snapshot snapshot;
+    v_applied_snapshots text[];
 BEGIN
     -- Find that the last snapshot execution action was upgrade and get the integrity hash
     SELECT * FROM package
@@ -313,9 +314,10 @@ BEGIN
     THEN
         RAISE EXCEPTION 'Integrity hash retrieval: package "%" must exist to get the integrity hash', p_package_name;
     END IF;
+    v_applied_snapshots := ARRAY(SELECT t FROM get_applied_snapshots(v_package) t);
     SELECT * FROM snapshot
         INTO v_snapshot
-        WHERE name = p_commit_hash AND p_commit_hash = ANY(get_applied_snapshots(v_package)) LIMIT 1;
+        WHERE commit_hash = p_commit_hash AND p_commit_hash = ANY(v_applied_snapshots) LIMIT 1;
     IF v_snapshot IS NULL
     THEN
         RAISE EXCEPTION 'Integrity hash retrieval: snapshot "%" must exist to get the integrity hash', p_commit_hash;

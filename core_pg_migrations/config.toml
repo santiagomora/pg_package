@@ -1,6 +1,5 @@
 [migration]
 migration_submodule = ".migration"
-var_directory = "./var"
 datafix_directory = "./datafix"
 tracked_branch = "trunk"
 remote_name = "sgs"

@@ -87,7 +87,7 @@ std::deque<snapshot> get_applied_package_snapshots_for_downgrade_dry_run (
         pqxx::work v_tx(v_conn);
         cm_bk::set_search_path_for_package(v_tx, v_package);
         std::deque<cm_bk::snapshot> v_applied_snapshots, v_unapply_snapshots;
-        cm_db::execution_action v_action = cm_db::execution_action::upgrade;
+        cm_db::execution_action v_action = cm_db::execution_action::downgrade;
         std::tie(v_applied_snapshots, v_unapply_snapshots) = get_request_snapshot_list(
             v_tx, v_package, p_hash, v_action
         );
