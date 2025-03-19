@@ -60,17 +60,17 @@ class execution(pw.execution, metaclass=pg.table):
     pass
 
 
-@pg.table.primary_key(
-    name='migration_pk', columns=('id',))
-@pg.table.unique_constraint(
-    name='migration_unique_name_constraint', columns=('snapshot_id', 'name',))
-@pg.table.unique_constraint(
-    name='migration_unique_heap_position_constraint', columns=('snapshot_id', 'heap_position',))
-@pg.table.unique_constraint(
-    name='migration_unique_datafix_name_constraint', columns=('snapshot_id', 'datafix_name',))
+# @pg.table.unique_constraint(
+#     name='migration_unique_heap_position_constraint', columns=('snapshot_id', 'heap_position',))
+# @pg.table.unique_constraint(
+#     name='migration_unique_datafix_name_constraint', columns=('snapshot_id', 'datafix_name',))
 @pg.table.foreign_key(
     name='migration_snapshot_id_fk', columns=('snapshot_id',),
     references=snapshot, referenced_columns=('id',))
+@pg.table.unique_constraint(
+    name='migration_unique_name_constraint', columns=('snapshot_id', 'name',))
+@pg.table.primary_key(
+    name='migration_pk', columns=('id',))
 @pg.table.serial(column='id', sequence=migration_id_seq)
 class migration(pw.migration, metaclass=pg.table):
     pass

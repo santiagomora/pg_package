@@ -31,16 +31,14 @@ def upgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, N
         .table('migration').column('downgrade_script_name').add()\
         .table('migration').primary_key('migration_pk').add()\
         .table('migration').unique_constraint('migration_unique_name_constraint').add()\
-        .table('migration').unique_constraint('migration_unique_heap_position_constraint').add()\
-        .table('migration').unique_constraint('migration_unique_datafix_name_constraint').add()\
         .table('migration').foreign_key('migration_snapshot_id_fk').add()
+# .table('migration').unique_constraint('migration_unique_heap_position_constraint').add()\
+# .table('migration').unique_constraint('migration_unique_datafix_name_constraint').add()\
 
 
 def downgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None, None]:
     yield from sb.builder(snapshot)\
         .table('migration').foreign_key('migration_snapshot_id_fk').drop()\
-        .table('migration').unique_constraint('migration_unique_datafix_name_constraint').drop()\
-        .table('migration').unique_constraint('migration_unique_heap_position_constraint').drop()\
         .table('migration').unique_constraint('migration_unique_name_constraint').drop()\
         .table('migration').primary_key('migration_pk').drop()\
         .table('migration').column('downgrade_script_name').drop()\
@@ -51,6 +49,8 @@ def downgrade(snapshot: dict[str, Any]) -> Generator[GeneratesSQLSentence, None,
         .table('migration').column('snapshot_id').drop()\
         .table('migration').column('id').drop()\
         .table('migration').drop()
+# .table('migration').unique_constraint('migration_unique_datafix_name_constraint').drop()\
+# .table('migration').unique_constraint('migration_unique_heap_position_constraint').drop()\
 
     yield from sb.builder(snapshot)\
         .sequence('migration_id_seq').drop()

@@ -24,8 +24,12 @@ def run(
         cm.prompt_notice(f'Upgrading package "{script_arguments.package}" to snapshot "{script_arguments.snapshot}". Checking if "core_pg_migrations" is up to date...')
         package_config = cm.UpgradeEnvironment(script_arguments.package, script_arguments, script_arguments.snapshot)
         migrations_config = cm.UpgradeEnvironment("core_pg_migrations", script_arguments, None, package_config)
-        get_current_state(migrations_config)
-        cm.prompt_notice(f'Package "core_pg_migrations" is up to date...')
+        core_pg_migrations_unapplied = get_unapplied_package_snapshots_for_upgrade_dry_run(migrations_config, get_current_state(migrations_config), migrations_config.LAST_SNAPSHOT.commit_hash)
+        if len(core_pg_migrations_unapplied) > 0:
+            cm.prompt_error('Package "core_pg_migrations" is not up to date...')
+            exit(1)
+        else:
+            cm.prompt_notice(f'Package "core_pg_migrations" is up to date...')
         config = package_config
     current_package_state = get_current_state(config)
     if config.DRY_RUN:

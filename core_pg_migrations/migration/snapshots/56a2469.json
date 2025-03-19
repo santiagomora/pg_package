@@ -510,20 +510,6 @@
                 }
             },
             "unique_constraints": {
-                "migration_unique_datafix_name_constraint": {
-                    "name": "migration_unique_datafix_name_constraint",
-                    "columns": [
-                        "snapshot_id",
-                        "datafix_name"
-                    ]
-                },
-                "migration_unique_heap_position_constraint": {
-                    "name": "migration_unique_heap_position_constraint",
-                    "columns": [
-                        "snapshot_id",
-                        "heap_position"
-                    ]
-                },
                 "migration_unique_name_constraint": {
                     "name": "migration_unique_name_constraint",
                     "columns": [

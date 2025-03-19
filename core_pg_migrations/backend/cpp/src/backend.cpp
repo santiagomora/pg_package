@@ -61,8 +61,6 @@
 // |             +-> F: | raise exception and exit
 // |
 // +-> F: | raise exception and exit
-
-
 namespace core_pg_migrations::backend
 {
 

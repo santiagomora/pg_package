@@ -482,13 +482,13 @@ class IndexBuilder(Builder):
 class Table(Component, Droppable, Creatable, Alterable, Renamable):
     class Create(Create):
         def sql_sentence_params(self) -> SQLSentenceParams:
-            bases: list[Identifier] = []
+            bases_sql: list[Identifier] = []
             placeholders: list[str] = []
-            bases: Optional[list[type]] = list(self.component.definition['bases'])
+            bases: Optional[Any] = list(self.component.definition['bases'])
             for base in [] if bases is None else bases:
-                bases += [identifier(base['schema']), identifier(base['type'])]
+                bases_sql += [identifier(base['schema']), identifier(base['type'])]
                 placeholders += ['{}.{}']
-            return ('CREATE TABLE {}.{} () INHERITS ' + f'({", ".join(placeholders)});' if len(bases) > 0 else 'CREATE TABLE {}.{} ();', [identifier(self.component.parent.name), identifier(self.component.name)] + bases, [])
+            return ('CREATE TABLE {}.{} () INHERITS ' + f'({", ".join(placeholders)});' if len(bases_sql) > 0 else 'CREATE TABLE {}.{} ();', [identifier(self.component.parent.name), identifier(self.component.name)] + bases_sql, [])
 
         def is_opposite(self, other: GeneratesSQLSentence) -> bool:
             return other.__class__ == Table.Drop\
