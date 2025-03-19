@@ -362,7 +362,7 @@ class Column(Component, Alterable, Droppable, Addable, Renamable):
             return ('DROP COLUMN {};', [identifier(self.component.name)], [], )
 
         def is_opposite(self, other: GeneratesSQLSentence) -> bool:
-            return other.__class == Column.Add\
+            return other.__class__ == Column.Add\
                 and self.component.name == other.component.name
 
     class Rename(Rename):
@@ -756,7 +756,7 @@ class Enum(Component, Renamable, Alterable, Droppable, Creatable):
             return ('DROP TYPE {}.{};', [identifier(self.component.parent.name), identifier(self.component.name)], [], )
 
         def is_opposite(self, other: GeneratesSQLSentence) -> bool:
-            return other.__class__ == Enum.Add\
+            return other.__class__ == Enum.Create\
                 and self.component.name == other.component.name
 
     class Rename(Rename):

@@ -65,10 +65,12 @@ def get_migration_downgrade_script(
 
 
 def get_snapshot_migrations(
-    config: UpgradeEnvironment, snapshot: SnapshotList.Node
+    config: UpgradeEnvironment, snapshot: SnapshotList.Node, print_exec_heap: bool = True
 ) -> list[migration]:
     execution_heap: ExecutionHeap = get_execution_heap(config, snapshot)
     res: list[migration] = []
+    if print_exec_heap:
+        prompt_notice(f'SNAPSHOT "{snapshot.commit_hash}" EXECUTION HEAP:\n\n{execution_heap}')
     with psycopg.connect(config.DSN) as connection:
         with psycopg.ClientCursor(connection) as cursor:
             prompt_notice(f'Generating migration script for package "{config.PACKAGE_NAME}" at snapshot "{snapshot.commit_hash}".')
@@ -91,18 +93,20 @@ def get_snapshot_migrations(
 
 
 def get_snapshot_as_backend_type(
-    config: UpgradeEnvironment, node: SnapshotList.Node
+    config: UpgradeEnvironment, node: SnapshotList.Node, print_exec_heap: bool = True
 ) -> snapshot:
     previous_hash: Optional[str] = getattr(node.previous_node, 'commit_hash', None)
     next_hash: Optional[str] = getattr(node.next_node, 'commit_hash', None)
     return snapshot(
         hash=node.commit_hash, previous_hash=previous_hash, next_hash=next_hash,
-        migrations=get_snapshot_migrations(config, node), payload=str(node.payload_data)
+        migrations=get_snapshot_migrations(config, node, print_exec_heap), payload=str(node.payload_data)
     )
 
 
-def get_current_state(config: UpgradeEnvironment) -> tuple[package, pg.int8]:
-    snapshots: list[snapshot] = [get_snapshot_as_backend_type(config, node) for node in config.GENERATED_SNAPSHOTS_LIST]
+def get_current_state(
+    config: UpgradeEnvironment, print_exec_heap: bool = True
+) -> tuple[package, pg.int8]:
+    snapshots: list[snapshot] = [get_snapshot_as_backend_type(config, node, print_exec_heap) for node in config.GENERATED_SNAPSHOTS_LIST]
     current_packate_state: package = package(
         name=config.PACKAGE_NAME, schema_name=config.SCHEMA_NAME, remote_name=config.REMOTE_NAME,
         tracked_branch_name=config.TRACKED_BRANCH, procedure_schema_name=config.PROCEDURE_SCHEMA_NAME,

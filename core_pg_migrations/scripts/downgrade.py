@@ -1,7 +1,7 @@
 import core_pg_migrations.backend.scripts as cm
 import argparse
 import sys
-from core_pg_migrations.backend.scripts.package import get_current_state, snapshot, get_applied_package_snapshots_for_downgrade_dry_run, downgrade_to_package_snapshot_hash
+from core_pg_migrations.backend.scripts.package import get_current_state, snapshot, get_applied_package_snapshots_for_downgrade_dry_run, downgrade_to_package_snapshot_hash, get_unapplied_package_snapshots_for_upgrade_dry_run
 
 
 def downgrade_to_package_snapshot_hash_dry_run(_snapshot: snapshot) -> None:
@@ -25,7 +25,7 @@ def run(
         cm.prompt_notice(f'Downgrading package "{script_arguments.package}" to snapshot "{script_arguments.snapshot}". Checking if "core_pg_migrations" is up to date...')
         package_config = cm.DowngradeEnvironment(script_arguments.package, script_arguments, script_arguments.snapshot)
         migrations_config = cm.DowngradeEnvironment("core_pg_migrations", script_arguments, None, package_config)
-        core_pg_migrations_unapplied = get_unapplied_package_snapshots_for_upgrade_dry_run(migrations_config, get_current_state(migrations_config), migrations_config.LAST_SNAPSHOT.commit_hash)
+        core_pg_migrations_unapplied = get_unapplied_package_snapshots_for_upgrade_dry_run(migrations_config, get_current_state(migrations_config, False), migrations_config.LAST_SNAPSHOT.commit_hash)
         if len(core_pg_migrations_unapplied) > 0:
             cm.prompt_error('Package "core_pg_migrations" is not up to date...')
             exit(1)

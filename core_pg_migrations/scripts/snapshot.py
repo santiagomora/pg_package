@@ -61,22 +61,21 @@ def run(config: cm.SnapshotEnvironment) -> None:
             continue
         pg_def = definition._postgres_definition
         definitions_ser[name] = _serialize(pg_def)
-    os.makedirs(config.SNAPSHOT_PATH, exist_ok=True)
-    cm.prompt_notice(f'Generating snapshot for package {config.PACKAGE_NAME} at commit "{config.COMMIT_HASH}" tracking branch "{config.TRACKED_BRANCH}" in branch "{config.CURRENT_BRANCH}"...')
+    cm.prompt_notice(f'Generating snapshot for package {config.PACKAGE_NAME} at commit "{config.LAST_REMOTE_COMMIT_HASH}" tracking branch "{config.TRACKED_BRANCH}" in branch "{config.CURRENT_BRANCH}"...')
     # Get the snapshot
     cm.prompt_notice(f'Checking if package has snapshots...')
     last_snapshot = config.LAST_SNAPSHOT
     if last_snapshot is None:
         # 1. last snapshot is none, then user is generating first package snapshot
-        cm.prompt_notice(f'No snapshots detected. Generating first snapshot at "{config.COMMIT_HASH}"...')
+        cm.prompt_notice(f'No snapshots detected. Generating first snapshot at "{config.LAST_REMOTE_COMMIT_HASH}"...')
         new_snapshot = cm.SnapshotList.Node(
-            config.COMMIT_HASH, {
+            config.LAST_REMOTE_COMMIT_HASH, {
                 'previous_snapshot': None, 'next_snapshot': None,
                 config.SCHEMA_NAME: definitions_ser
             }, config.SCHEMA_NAME
         )
         last_snapshot = new_snapshot
-    elif last_snapshot.commit_hash == config.COMMIT_HASH:
+    elif last_snapshot.commit_hash == config.LAST_REMOTE_COMMIT_HASH:
         # 2. last snapshot is the same as the genrated snapshot, we need to update the payload
         cm.prompt_notice(f'Detected snapshot "{last_snapshot.commit_hash}" is the same as last execution. Updating last contents...')
         last_snapshot.payload[config.SCHEMA_NAME] = definitions_ser
@@ -84,7 +83,7 @@ def run(config: cm.SnapshotEnvironment) -> None:
         # 3. last snapshot is different than new snapshot, this means the package has snapshots but not of the commit hash
         cm.prompt_notice(f'Detected last snapshot at "{last_snapshot.commit_hash}". Generating next snapshot "{new_snapshot.commit_hash}"...')
         new_snapshot = cm.SnapshotList.Node(
-            config.COMMIT_HASH, {
+            config.LAST_REMOTE_COMMIT_HASH, {
                 'previous_snapshot': None, 'next_snapshot': None,
                 config.SCHEMA_NAME: definitions_ser
             }, config.SCHEMA_NAME

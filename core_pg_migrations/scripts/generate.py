@@ -65,7 +65,7 @@ def create_migration_from_template(
         mgrdest.write(core_pg_migrations_template.format(
             depends_on=DEPENDS, generated_at=f"'{generated_at}'",
             datafix_name=f"'{datafix_name}'" if datafix_name is not None else None,
-            snapshot=f'"{CONFIG.COMMIT_HASH}"'
+            snapshot=f'"{CONFIG.LAST_REMOTE_COMMIT_HASH}"'
         ))
     prompt_notice(f'Migration "{NAME}" generated at path "{PATH}"')
     return NAME
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         template_path=CONFIG.TEMPLATE_PATH
     )
     core_pg_migrations_name: Optional[str] = create_migration_from_template(
-        config=args, dest_path=CONFIG.MIGRATION_PATH,
+        config=args, dest_path=CONFIG.snapshot_path(None),
         template_path=CONFIG.TEMPLATE_PATH,
         datafix_name=dfx_name
     )

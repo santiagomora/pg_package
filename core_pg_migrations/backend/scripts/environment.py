@@ -28,11 +28,12 @@ class _ExecutionEnvironment:
         self.package = package
         self._snapshots = None
 
-    def _obtain_snapshot_list_from_path(self, path: str, until: Optional[str] = None):
+    def _obtain_snapshot_list(self, until: Optional[str] = None):
         snapshot_dict: dict[str, SnapshotList.Node] = {}
-        for file_name in os.listdir(path):
-            snapshot_hash: str = file_name.split('.')[0]
-            with open(os.path.join(path, file_name), 'r') as f:
+        for snapshot_hash in os.listdir(self.MIGRATION_PATH):
+            if snapshot_hash.startswith('__'):
+                continue
+            with open(os.path.join(self.MIGRATION_PATH, snapshot_hash, '.snapshot.json'), 'r') as f:
                 snapshot_dict[snapshot_hash] = SnapshotList.Node(snapshot_hash, json.load(f), self.SCHEMA_NAME)
             if until is not None and snapshot_hash == until:
                 break
@@ -91,11 +92,6 @@ class _ExecutionEnvironment:
 
     @property
     @functools.cache
-    def SCRIPT_OUTPUT_PATH(self) -> str:
-        return f'{os.path.dirname(self.package.__file__)}/{self.config["migration"]["var_directory"]}'
-
-    @property
-    @functools.cache
     def TEMPLATE_PATH(self) -> str:
         return f'{os.path.dirname(core_pg_migrations.__file__)}/template'
 
@@ -116,7 +112,7 @@ class _ExecutionEnvironment:
 
     @property
     @functools.cache
-    def COMMIT_HASH(self) -> str:
+    def LAST_REMOTE_COMMIT_HASH(self) -> str:
         return os.popen(f'git merge-base {self.CURRENT_BRANCH} {self.config["migration"]["remote_name"]}/{self.config["migration"]["tracked_branch"]} | xargs git rev-parse --short').read().rstrip()
 
     @property
@@ -131,24 +127,29 @@ class _ExecutionEnvironment:
 
     @property
     @functools.cache
-    def SNAPSHOT_PATH(self) -> str:
-        return os.path.join(self.MIGRATION_PATH, 'snapshots')
-
-    @property
-    @functools.cache
     def GENERATED_SNAPSHOTS_LIST(self) -> SnapshotList:
         if self._snapshots is None:
-            self._obtain_snapshot_list_from_path(self.SNAPSHOT_PATH)
+            self._obtain_snapshot_list()
         return self._snapshots
 
     @property
     def LAST_SNAPSHOT(self) -> SnapshotList.Node:
         return self.GENERATED_SNAPSHOTS_LIST.last_node
 
-    @property
-    @abstractmethod
-    def SCRIPT_NAME(self) -> None:
-        pass
+    def snapshot_path(self, requested_snapshot: Optional[str]) -> str:
+        path: Optional[str] = None
+        if requested_snapshot is None and self.LAST_SNAPSHOT is None:
+            path = os.path.join(self.MIGRATION_PATH, self.LAST_REMOTE_COMMIT_HASH)
+        elif requested_snapshot is not None:
+            path = os.path.join(self.MIGRATION_PATH, requested_snapshot)
+        else:
+            path = os.path.join(self.MIGRATION_PATH, self.LAST_SNAPSHOT.commit_hash)
+        if path is None:
+            prompt_error('Could not deduce snapshot path...')
+            exit(1)
+        else:
+            os.makedirs(path, exist_ok=True)
+        return path
 
 
 class _StateChangeEnvironment(_ExecutionEnvironment):
@@ -165,14 +166,14 @@ class _StateChangeEnvironment(_ExecutionEnvironment):
     @functools.cache
     def GENERATED_SNAPSHOTS_LIST(self) -> SnapshotList:
         if self._snapshots is None:
-            self._obtain_snapshot_list_from_path(self.SNAPSHOT_PATH, self._requested_snapshot)
+            self._obtain_snapshot_list(self._requested_snapshot)
         return self._snapshots
 
     def get_migration_modules(self, snapshot: SnapshotList.Node) -> Generator[ModuleType, None, None]:
-        for f in os.listdir(self.MIGRATION_PATH):
-            if not f.startswith(snapshot.commit_hash):
+        for f in os.listdir(self.snapshot_path(snapshot.commit_hash)):
+            if f.startswith('.') or f.startswith('__'):
                 continue
-            yield importlib.import_module(f'{self.MIGRATION_SUBMODULE.__name__}.{f.split('.')[0]}', package=self.PACKAGE_NAME)
+            yield importlib.import_module(f'{self.MIGRATION_SUBMODULE.__name__}.{snapshot.commit_hash}.{f.split('.')[0]}', package=self.PACKAGE_NAME)
 
     @property
     def DSN(self) -> str:
@@ -224,7 +225,8 @@ class SnapshotEnvironment(_ExecutionEnvironment):
         _ExecutionEnvironment.__init__(self, args.package, args)
 
     def persist_snapshot(self, definition: SnapshotList.Node):
-        with open(os.path.join(self.SNAPSHOT_PATH, f'{definition.commit_hash}.json'), 'w') as f:
+        snapshot_path = self.snapshot_path(definition.commit_hash)
+        with open(os.path.join(snapshot_path, '.snapshot.json'), 'w') as f:
             f.write(json.dumps(
                 definition.payload, indent=4, separators=(',', ': ', )
             ))
@@ -237,7 +239,7 @@ class GenerateEnvironment(_ExecutionEnvironment):
         _ExecutionEnvironment.__init__(self, args.package, args)
 
     def get_migration_filename(self, name: str) -> str:
-        return f'{self.COMMIT_HASH}_{name}.py'
+        return f'{name}.py'
 
     def get_datafix_filename(self, name: str) -> str:
-        return f'{self.COMMIT_HASH}_{name}.sql'
+        return f'{self.LAST_REMOTE_COMMIT_HASH}_{name}.sql'

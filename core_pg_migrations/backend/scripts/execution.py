@@ -16,6 +16,8 @@ import math
 import functools
 from .snapshot import SnapshotList
 from types import ModuleType
+from core_pg_migrations.builder.common import\
+    GeneratesSQLSentence
 
 
 mgr = core_pg_migrations.database.core_pg_migrations
@@ -66,19 +68,29 @@ class MigrationWrapper:
         yielded by rollback script. all the sentences in commit script must have
         their opposite in rollback script.
         '''
-        errors: list[str] = []
-        creating: list[str] = []
-        opposite_script: mgr.execution_action.enum = self.config.opposite_action()
-        for c_sentence in self.upgrade(self.snapshot.payload_data):
-            if isinstance(c_sentence, sb.Create):
-                creating.append(c_sentence.component.name)
-            has_opposite: bool = False
-            for rb_sentence in self.downgrade(self.snapshot.payload_data):
-                has_opposite = has_opposite or c_sentence.is_opposite(rb_sentence)
-            if not has_opposite:
-                errors.append(f'"{c_sentence}" must have an opposite sentence in {opposite_script} script')
-        if len(errors) > 0:
-            raise ConsistencyException(f'Migration "{self.NAME}" error: {"\n".join(errors)}')
+        def check_sentences_consistency(
+            sentence_list: list[GeneratesSQLSentence],
+            opposite_sentence_list: list[GeneratesSQLSentence]
+        ) -> list[str]:
+            errors: list[str] = []
+            creating: list[str] = []
+            for c_sentence in sentence_list:
+                if isinstance(c_sentence, sb.Create):
+                    creating.append(c_sentence.component.name)
+                has_opposite: bool = False
+                for rb_sentence in opposite_sentence_list:
+                    has_opposite = has_opposite or c_sentence.is_opposite(rb_sentence)
+                if not has_opposite:
+                    errors.append(f'"{c_sentence}" must have an opposite sentence in opposite script')
+            return errors
+        upgrade_sentences = [s for s in self.upgrade(self.snapshot.payload_data)]
+        downgrade_sentences = [s for s in self.downgrade(self.snapshot.payload_data)]
+        u_errors = check_sentences_consistency(upgrade_sentences, downgrade_sentences)
+        d_errors = check_sentences_consistency(downgrade_sentences, upgrade_sentences)
+        if len(u_errors) > 0:
+            raise ConsistencyException(f'Migration "{self.NAME}" error: {"\n".join(u_errors)}')
+        if len(d_errors) > 0:
+            raise ConsistencyException(f'Migration "{self.NAME}" error: {"\n".join(d_errors)}')
 
 
 class ExecutionHeap(list[MigrationWrapper]):
@@ -151,5 +163,4 @@ def get_execution_heap(
         exec_heap.append(wrapper)
     ExecutionHeap.unfold_dependencies(exec_heap)
     heapq.heapify(exec_heap)
-    prompt_notice(f'EXECUTION PLAN:\n\n{exec_heap}')
     return exec_heap
