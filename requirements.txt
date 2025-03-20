@@ -1,5 +1,5 @@
-# "base_types @ git+ssh://git@github.com/santiagomora/base_types.git@b0eb87cbf82a2a6dd4c816d11f263b622ea6b9ff#egg=base_types",
-# "pg_definition @ git+ssh://git@github.com/santiagomora/pg_definition.git@6cc73554e380257faf0e68df43fe9c6ae54dc438#egg=pg_definition",
+"core_types @ git@distrib.sgs-devel.com:/home/git/core_types@4c778248c52901423a827e39c6e46c40527435b6#egg=core_types"
+"core_pg_bindings @ distrib.sgs-devel.com:/home/git/core_pg_bindings@ff12c84645e6755ad6bd8887aa1b3ba00591d0f3#egg=core_pg_bindings",
 annotated-types==0.6.0
 compress-pickle==2.1.0
 lz4==4.3.3
