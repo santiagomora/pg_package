@@ -1,5 +1,6 @@
-recursive-include core_pg_migrations/database/cpp/lib/include/ *
-recursive-include core_pg_migrations/backend/cpp/include/ *
 recursive-include core_pg_migrations/template/ *
 recursive-include core_pg_migrations/migration/ *
-include core_pg_migrations/config.toml
+recursive-include core_pg_migrations/ *
+recursive-include core_pg_migrations_cpp/ *
+prune core_pg_migrations/**/__pycache__
+prune core_pg_migrations_cpp/**/build

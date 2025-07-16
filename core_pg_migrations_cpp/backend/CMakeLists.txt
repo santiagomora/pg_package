@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-project(core_pg_migrations_db)
+
+project(backend_wrapper)
+
 set(CMAKE_CXX_STANDARD 20)
 set(PYTHON_VERSION 3.12)
 set(PYBIND11_PYTHON_VERSION ${PYTHON_VERSION})
@@ -10,16 +12,21 @@ set(pybind11_DIR ${PYTHON_VENV_PATH}/lib/python${PYTHON_VERSION}/site-packages/p
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -fPIC -O2 -march=native -flto=auto -Wno-attributes -Wno-deprecated")
 
 find_package(pybind11 REQUIRED)
-add_library(${PROJECT_NAME} SHARED
-    src/declarations.cpp)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${SGS_INCLUDE_PATH})
+pybind11_add_module(${PROJECT_NAME}
+    src/util.cpp
+    src/backend.cpp
+    src/interface.cpp
+    wrapper.cpp
+)
+
 target_include_directories(${PROJECT_NAME} PRIVATE ./include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${SGS_INCLUDE_PATH})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PYBIND11_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${SGS_LIB_PATH}/libcore_types.so)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${SGS_LIB_PATH}/libcore_pg_bindings.so)
-target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::module)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${SGS_LIB_PATH}/libcore_pg_migrations_db.so)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE pqxx)
 target_link_libraries(${PROJECT_NAME} PRIVATE pq)

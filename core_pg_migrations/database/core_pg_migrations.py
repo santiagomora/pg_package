@@ -1,5 +1,5 @@
 import core_pg_bindings as pg
-import core_pg_migrations.database.cpp.module.database_wrapper as pw
+import core_pg_migrations.database.cpp.database_wrapper as pw
 from typing_extensions import Self
 
 
